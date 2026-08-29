@@ -27,6 +27,9 @@
   }
 
   function vault() {
+    if (window.YRoomGate) return window.YRoomGate.origin() || location.origin;
+    var host = String(location.hostname || "");
+    if (host === "127.0.0.1" || host === "localhost") return location.origin;
     return String(window.VAULT_ORIGIN || "").replace(/\/$/, "") || location.origin;
   }
   function withKey(path) {

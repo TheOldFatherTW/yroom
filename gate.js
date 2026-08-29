@@ -4,6 +4,10 @@
   var INSTALLED = "yroom.installed";
 
   function origin() {
+    var host = String(location.hostname || "");
+    if (host === "127.0.0.1" || host === "localhost") {
+      return String(location.origin || "").replace(/\/$/, "");
+    }
     return String(window.VAULT_ORIGIN || "").replace(/\/$/, "");
   }
 
