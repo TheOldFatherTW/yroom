@@ -39,8 +39,8 @@
       return;
     }
     window.YRoomGate.api("/api/public", "", { timeout: 8000 }).catch(function () { return null; });
-    window.YRoomGate.api("/api/door", key, { timeout: 20000 }).then(function (x) {
-      if (!x || !x.res.ok || !x.j) {
+    window.YRoomGate.apiRetry("/api/door", key, { timeout: 20000, tries: 3 }).then(function (x) {
+      if (!x || !x.res || !x.res.ok || !x.j) {
         if (statusEl) statusEl.textContent = "維護中,請5分鐘後再試";
         scheduleReconnect();
         return;
@@ -67,11 +67,12 @@
       }
       busy = true;
       startWait();
-      window.YRoomGate.api("/api/invite/claim", inviteKey, {
+      window.YRoomGate.apiRetry("/api/invite/claim", inviteKey, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
         timeout: 20000,
+        tries: 3,
       }).then(function (x) {
         if (!x || !x.res.ok || !x.j || !x.j.token) {
           if (statusEl) statusEl.textContent = "維護中,請5分鐘後再試";

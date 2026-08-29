@@ -80,7 +80,7 @@
     retryTimer = setTimeout(function () {
       retryTimer = 0;
       if (window.YRoomGate) {
-        window.YRoomGate.refreshOrigin().then(function () { location.reload(); });
+        window.YRoomGate.refreshOrigin().then(boot);
       } else {
         location.reload();
       }
@@ -209,13 +209,21 @@
       window.YRoomGate.savePersonal(KEY);
       window.YRoomGate.pinKey(KEY);
     }
-    get("/api/me").then(function (me) {
+    var gate = window.YRoomGate;
+    var meAsk = gate
+      ? gate.apiRetry("/api/me", KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; })
+      : get("/api/me");
+    meAsk.then(function (me) {
+      if (!me) throw new Error("no_me");
       document.getElementById("reader-name").textContent = me.display_name || "館主";
       showHome();
       if (homeInstall && typeof navigator.standalone === "boolean" && !navigator.standalone) {
         var seen = "";
         try { seen = localStorage.getItem("yroom.installed") || ""; } catch (e) {}
         if (!seen) homeInstall.hidden = false;
+      }
+      if (gate) {
+        return gate.apiRetry("/api/shelf?limit=80", KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; });
       }
       return get("/api/shelf?limit=80");
     }).then(function (data) {
@@ -229,14 +237,27 @@
     });
   }
 
-  if (!KEY) {
-    failGate("請用入口連結打開");
-    return;
+  function boot() {
+    KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || KEY;
+    if (!KEY) {
+      failGate("請用入口連結打開");
+      return;
+    }
+    var ask = window.YRoomGate
+      ? window.YRoomGate.apiRetry("/api/door", KEY, { timeout: 20000, tries: 3 })
+      : get("/api/door").then(function (door) { return { res: { ok: true }, j: door }; });
+    ask.then(function (x) {
+      if (!x || !x.j || (x.res && !x.res.ok)) {
+        failGate();
+        scheduleReconnect();
+        return;
+      }
+      afterDoor(x.j);
+    }).catch(function () {
+      failGate();
+      scheduleReconnect();
+    });
   }
-  get("/api/door").then(function (door) {
-    afterDoor(door);
-  }).catch(function () {
-    failGate();
-    scheduleReconnect();
-  });
+
+  boot();
 })();

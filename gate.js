@@ -12,17 +12,47 @@
   }
 
   function api(path, key, opts) {
-    var base = origin() || location.origin.replace(/\/$/, "");
+    var base = origin();
+    if (!base) {
+      return Promise.reject(new Error("no_origin"));
+    }
     var url = base + path + (path.indexOf("?") >= 0 ? "&" : "?") + "k=" + encodeURIComponent(key || "");
     var ctrl = new AbortController();
-    var t = setTimeout(function () { ctrl.abort(); }, (opts && opts.timeout) || 8000);
-    return fetch(url, Object.assign({ signal: ctrl.signal }, opts || {}))
+    var t = setTimeout(function () { ctrl.abort(); }, (opts && opts.timeout) || 20000);
+    var init = { credentials: "omit", cache: "no-store", signal: ctrl.signal };
+    if (opts) {
+      if (opts.method) init.method = opts.method;
+      if (opts.headers) init.headers = opts.headers;
+      if (opts.body !== undefined) init.body = opts.body;
+    }
+    return fetch(url, init)
       .then(function (res) {
         return res.json().then(function (j) { return { res: res, j: j }; }).catch(function () {
           return { res: res, j: null };
         });
       })
       .finally(function () { clearTimeout(t); });
+  }
+
+  function apiRetry(path, key, opts) {
+    var tries = (opts && opts.tries) || 3;
+    function once(n) {
+      return api(path, key, opts).then(function (x) {
+        if (x && x.res && x.res.ok && x.j) return x;
+        if (n >= tries) return x;
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(once(n + 1)); }, 400 * n);
+        });
+      }).catch(function (err) {
+        if (n >= tries) throw err;
+        return new Promise(function (resolve, reject) {
+          setTimeout(function () {
+            once(n + 1).then(resolve, reject);
+          }, 400 * n);
+        });
+      });
+    }
+    return once(1);
   }
 
   function savePersonal(token) {
@@ -123,6 +153,7 @@
     INSTALLED: INSTALLED,
     origin: origin,
     api: api,
+    apiRetry: apiRetry,
     savePersonal: savePersonal,
     pinKey: pinKey,
     currentKey: currentKey,
