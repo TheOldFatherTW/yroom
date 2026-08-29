@@ -1,0 +1,3 @@
+# Chrome only. Never commit keys, books, or vault logs.
+*.ini
+.env

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<script>
+(function () {
+  function stopZoom(ev) { ev.preventDefault(); }
+  document.addEventListener("gesturestart", stopZoom, { passive: false });
+  document.addEventListener("gesturechange", stopZoom, { passive: false });
+})();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="YRoom"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#f2f2f7"/>
+<link rel="apple-touch-icon" href="./icons/b-180.png?v=1"/>
+<link rel="icon" type="image/png" href="./icons/b-180.png?v=1"/>
+<title>YRoom</title>
+<script src="./config.js?v=1787933376"></script>
+<script>
+window.FAMI_WEB_READER = true;
+(function () {
+  var KEY_RE = /^[A-Za-z0-9_-]{8,128}$/;
+  var stored = "";
+  try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
+  var cookie = "";
+  try {
+    var m = document.cookie.match(/(?:^|; )yroom\.viewKey=([^;]*)/);
+    cookie = m ? decodeURIComponent(m[1]) : "";
+  } catch (e) {}
+  var q = new URLSearchParams(location.search);
+  var k = q.get("k") || "";
+  var h = "";
+  try {
+    var raw = (location.hash || "").replace(/^#/, "");
+    if (raw.indexOf("k=") === 0) {
+      h = decodeURIComponent((raw.slice(2).split("&")[0] || "").replace(/\+/g, " "));
+    } else {
+      h = new URLSearchParams(raw).get("k") || "";
+    }
+  } catch (e) {}
+  var fromUrl = KEY_RE.test(k) ? k : KEY_RE.test(h) ? h : "";
+  var token = fromUrl || (KEY_RE.test(stored) ? stored : "") || (KEY_RE.test(cookie) ? cookie : "");
+  if (token) {
+    try { localStorage.setItem("yroom.viewKey", token); } catch (e) {}
+    q.set("k", token);
+    var pin = location.pathname + "?" + q.toString() + "#k=" + encodeURIComponent(token);
+    if (location.pathname + location.search + location.hash !== pin) {
+      history.replaceState({}, "", pin);
+    }
+  }
+  // One dummy is not enough, and identical URLs get merged so one swipe
+  // still pops through to the shelf. Unique hashes keep each pad distinct.
+  window.__famiReaderStay = true;
+  window.__famiStaySeq = 0;
+  function stayUrl(n) {
+    var raw = (location.hash || "").replace(/^#/, "").replace(/&?stay=\d+/g, "");
+    if (raw.slice(-1) === "&") raw = raw.slice(0, -1);
+    return location.pathname + location.search + "#" + (raw ? raw + "&stay=" + n : "stay=" + n);
+  }
+  function stayInReader() {
+    try {
+      window.__famiStaySeq += 1;
+      history.pushState({ famiReader: 1, n: window.__famiStaySeq }, "", stayUrl(window.__famiStaySeq));
+      window.__famiStaySeq += 1;
+      history.pushState({ famiReader: 1, n: window.__famiStaySeq }, "", stayUrl(window.__famiStaySeq));
+    } catch (e) {}
+  }
+  var embedded = false;
+  try { embedded = window.parent && window.parent !== window; } catch (e) {}
+  if (!embedded) {
+    stayInReader();
+    window.addEventListener("popstate", stayInReader);
+    window.addEventListener("pageshow", stayInReader);
+  } else {
+    try { window.parent.postMessage({ fami: "reader-loading" }, location.origin); } catch (e) {}
+  }
+  var bookId = q.get("book") || "";
+  if (bookId) {
+    try {
+      var prev = {};
+      try { prev = JSON.parse(sessionStorage.getItem("yroom.reading") || "{}") || {}; } catch (e) {}
+      sessionStorage.setItem("yroom.reading", JSON.stringify({
+        book: bookId,
+        k: token || "",
+        end: q.get("end") || "",
+        cover: prev.cover || ""
+      }));
+    } catch (e) {}
+  }
+  var origin = String(window.VAULT_ORIGIN || "").replace(/\/$/, "") || location.origin;
+  window.VAULT_ORIGIN = origin;
+  if (origin) {
+    var pre = document.createElement("link");
+    pre.rel = "preconnect";
+    pre.href = origin;
+    pre.crossOrigin = "anonymous";
+    document.head.appendChild(pre);
+    var files = ["css/global.css", "css/read.css", "css/navImage.css", "css/navMenu.css", "css/config.css", "css/mybook.css"];
+    for (var i = 0; i < files.length; i++) {
+      document.write('<link rel="stylesheet" href="' + origin + "/static/" + files[i] + '?v=20"/>');
+    }
+  }
+})();
+</script>
+<link rel="stylesheet" href="./app.css?v=40"/>
+<link rel="stylesheet" href="./read.css?v=14"/>
+</head>
+<body class="manga lightTheme famiWeb">
+<div id="loaderContainer">
+  <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  <p class="read-wait">打開書本</p>
+</div>
+<div id="pageWait" hidden>
+  <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  <p>書頁載入中</p>
+</div>
+
+<div id="topMenu" class="navMenu hidden">
+  <div class="navContainer">
+    <button type="button" id="backShelf" class="ins-icon nav-back" aria-label="返回書櫃">
+      <span class="ins-ring"></span>
+      <span class="ins-face">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div id="bookInfo">
+      <h2 id="bookTitle"></h2>
+      <h3 id="bookVolume" hidden></h3>
+    </div>
+    <div id="reader-settings" class="album-settings">
+      <button type="button" id="configButton" class="ins-icon settings-toggle" aria-label="設定" aria-expanded="false">
+        <span class="ins-ring"></span>
+        <span class="ins-face">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3.8l.6-1.3h3.6l.6 1.3 1.6.7 1.4-.5 2.5 2.5-.5 1.4.7 1.6 1.3.6v3.6l-1.3.6-.7 1.6.5 1.4-2.5 2.5-1.4-.5-1.6.7-.6 1.3h-3.6l-.6-1.3-1.6-.7-1.4.5-2.5-2.5.5-1.4-.7-1.6-1.3-.6v-3.6l1.3-.6.7-1.6-.5-1.4L6.6 4l1.4.5 1.6-.7z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><circle cx="12" cy="11.9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+      </button>
+      <div id="readerSettingsMenu" class="settings-menu" hidden role="menu">
+        <button type="button" class="settings-entry" id="openReaderConfig" role="menuitem">
+          <span class="ins-icon job-icon" aria-hidden="true">
+            <span class="ins-ring"></span>
+            <span class="ins-face">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3.8l.6-1.3h3.6l.6 1.3 1.6.7 1.4-.5 2.5 2.5-.5 1.4.7 1.6 1.3.6v3.6l-1.3.6-.7 1.6.5 1.4-2.5 2.5-1.4-.5-1.6.7-.6 1.3h-3.6l-.6-1.3-1.6-.7-1.4.5-2.5-2.5.5-1.4-.7-1.6-1.3-.6v-3.6l1.3-.6.7-1.6-.5-1.4L6.6 4l1.4.5 1.6-.7z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><circle cx="12" cy="11.9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </span>
+          </span>
+          <span>設定</span>
+        </button>
+        <button type="button" class="settings-entry" id="backToShelf" role="menuitem">
+          <span class="ins-icon job-icon" aria-hidden="true">
+            <span class="ins-ring"></span>
+            <span class="ins-face">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </span>
+          <span>返回</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="navImageContainer">
+  <div id="navStage">
+    <div id="navImage">
+      <img id="imgPageLeft" alt="" />
+      <img id="imgPageRight" alt="" />
+      <div id="filters" class="page-filters">
+        <div id="paperTexture" class="filter-paper"></div>
+        <div id="bookFold" class="filter-fold"></div>
+        <div id="lighting" class="filter-light"></div>
+        <div id="specular" class="filter-spec"></div>
+      </div>
+    </div>
+  </div>
+  <div id="hitPrev" class="pageHit"></div>
+  <div id="hitNext" class="pageHit"></div>
+</div>
+
+<div id="bottomMenu" class="navMenu hidden">
+  <div class="navContainer">
+    <div id="sliderContainer">
+      <p id="pageSliderLeft"></p>
+      <input id="pageSlider" type="range" min="1" value="1" class="slider" />
+      <p id="pageSliderRight"></p>
+    </div>
+  </div>
+</div>
+
+<div class="settings-catch" id="readerSettingsCatch" hidden></div>
+<div class="batch-tag-mask" id="endMask" hidden>
+  <div class="batch-tag-sheet" id="endSheet">
+    <div class="end-cover">
+      <img id="endCover" alt=""/>
+      <span class="tile-ep" id="endVol" hidden></span>
+    </div>
+    <p class="end-copy">這本書看完了,很棒</p>
+    <button type="button" class="tag-apply" id="endAgain">
+      <span class="tag-apply-face">重新閱讀</span>
+    </button>
+    <button type="button" class="tag-apply" id="endNext" hidden>
+      <span class="tag-apply-face">接下一集</span>
+    </button>
+    <button type="button" class="ins-icon nav-back" id="endHome" aria-label="返回書櫃" title="返回書櫃">
+      <span class="ins-ring"></span>
+      <span class="ins-face">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+  </div>
+</div>
+<div class="batch-tag-mask" id="configMask" hidden>
+  <div class="batch-tag-sheet" id="configMenu">
+    <div class="batch-tag-head">
+      <p>設定</p>
+      <button type="button" class="batch-tag-close" id="closeMenu">×</button>
+    </div>
+    <label class="ask-skip">
+      <span data-i18n="paperTexture">紙紋</span>
+      <input id="paperTextureSwitch" type="checkbox" role="switch"/>
+      <span class="ask-sw"></span>
+    </label>
+    <label class="ask-skip">
+      <span data-i18n="bookFold">書溝</span>
+      <input id="bookFoldSwitch" type="checkbox" role="switch"/>
+      <span class="ask-sw"></span>
+    </label>
+    <label class="ask-skip">
+      <span data-i18n="lighting">光影</span>
+      <input id="lightingSwitch" type="checkbox" role="switch"/>
+      <span class="ask-sw"></span>
+    </label>
+  </div>
+</div>
+
+<script>
+(function () {
+  document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  document.addEventListener("selectstart", function (e) {
+    if (e.target && e.target.closest && e.target.closest("input, textarea, select")) return;
+    e.preventDefault();
+  });
+  var origin = String(window.VAULT_ORIGIN || "").replace(/\/$/, "") || location.origin;
+  window.VAULT_ORIGIN = origin;
+  var book = new URLSearchParams(location.search).get("book") || "";
+  if (!origin || !book) {
+    var loader = document.getElementById("loaderContainer");
+    if (loader) loader.innerHTML = '<p class="read-miss">維護中,請5分鐘後再試</p>';
+    return;
+  }
+  var s = document.createElement("script");
+  s.src = origin + "/static/reader.js?v=25";
+  s.async = false;
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>

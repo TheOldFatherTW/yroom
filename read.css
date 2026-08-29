@@ -1,0 +1,479 @@
+/* FamiBook web reader: iOS chrome over Okuma structure. Tokens match system Settings, not Netflix. */
+html, body.famiWeb {
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --ink: #1c1c1e;
+  --mute: #8e8e93;
+  --line: #d1d1d6;
+  --accent: #007aff;
+  --void: #f2f2f7;
+  --ios-green: #34c759;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  background: var(--void) !important;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+    "Microsoft JhengHei", sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  touch-action: none;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+body.famiWeb,
+body.famiWeb select,
+body.famiWeb option,
+body.famiWeb button,
+body.famiWeb input,
+body.famiWeb p,
+body.famiWeb h2,
+body.famiWeb h3,
+body.famiWeb label {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+    "Microsoft JhengHei", sans-serif !important;
+  font-weight: 400 !important;
+}
+body.famiWeb.darkTheme,
+body.famiWeb.lightTheme {
+  --background-gradient: none;
+  --menu-background-color: rgba(242, 242, 247, 0.92);
+  --menu-text-color: var(--ink);
+  background: var(--void) !important;
+}
+body.famiWeb #navImageContainer {
+  width: 100vw;
+  height: 100dvh;
+  background: var(--void);
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior-x: none;
+}
+body.famiWeb #navStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: grid;
+  place-content: center;
+}
+body.famiWeb #navStage > .nav-spread,
+body.famiWeb #navImage,
+body.famiWeb #navIncoming {
+  grid-area: 1 / 1;
+  justify-self: center;
+  align-self: center;
+}
+body.famiWeb #navIncoming {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  height: auto;
+  width: min-content;
+  max-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+  background-image: none !important;
+}
+body.famiWeb #navIncoming > img {
+  display: block;
+  background: #fff;
+  object-fit: contain;
+  object-position: center center;
+}
+body.famiWeb #navIncoming.singlePage > img:last-of-type {
+  display: none;
+}
+body.famiWeb #navIncoming .crop-left {
+  object-fit: cover;
+  object-position: left center;
+}
+body.famiWeb #navIncoming .crop-right {
+  object-fit: cover;
+  object-position: right center;
+}
+body.famiWeb #navImage,
+body.famiWeb #navIncoming {
+  isolation: isolate;
+  overflow: hidden;
+}
+body.famiWeb #navImage {
+  background-image: none !important;
+  max-height: 100dvh;
+}
+body.famiWeb #navImage.bookShadow,
+body.famiWeb #navIncoming.bookShadow {
+  filter: none;
+  box-shadow: none;
+}
+body.famiWeb .pageHit {
+  z-index: 6;
+  touch-action: none;
+}
+body.famiWeb .navMenu {
+  background: transparent;
+}
+body.famiWeb #topMenu.hidden,
+body.famiWeb #bottomMenu.hidden,
+body.famiWeb #topMenu.hidden > .navContainer,
+body.famiWeb #bottomMenu.hidden > .navContainer {
+  pointer-events: none !important;
+}
+body.famiWeb .navMenu > .navContainer {
+  width: 100%;
+  background: rgba(242, 242, 247, 0.92);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none;
+  border-radius: 0;
+}
+body.famiWeb .navMenu * {
+  font-size: 16px;
+}
+body.famiWeb #topMenu {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+body.famiWeb #topMenu .navContainer {
+  height: auto;
+  min-height: 48px;
+  padding: 8px max(22px, calc(env(safe-area-inset-right, 0px) + 16px)) 8px max(16px, calc(env(safe-area-inset-left, 0px) + 12px));
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  place-content: center;
+  place-items: center;
+  gap: 10px;
+}
+body.famiWeb #topMenu .navContainer > div,
+body.famiWeb #topMenu .navContainer > button {
+  height: auto;
+  padding: 0;
+}
+body.famiWeb #bookInfo {
+  min-width: 0;
+  width: 100%;
+}
+body.famiWeb #bookInfo > #bookTitle {
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: none;
+  margin: 0;
+  letter-spacing: 0;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100vw - 120px);
+}
+body.famiWeb #bookInfo > #bookVolume {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--mute);
+  margin: 2px 0 0;
+}
+body.famiWeb #bookInfo > #bookVolume[hidden] {
+  display: none !important;
+}
+body.famiWeb #backShelf {
+  -webkit-mask: none !important;
+  mask: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  background: transparent !important;
+  width: 40px !important;
+  height: 40px !important;
+  flex: 0 0 40px !important;
+  padding: 0;
+  color: #1c1c1e;
+  font-size: 0;
+  font-weight: 400;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
+}
+body.famiWeb #backShelf .ins-face {
+  inset: 3px;
+}
+body.famiWeb #backShelf svg {
+  width: 18px;
+  height: 18px;
+  color: #1c1c1e;
+}
+body.famiWeb #configButton {
+  -webkit-mask: none !important;
+  mask: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  background: transparent !important;
+  width: 40px !important;
+  height: 40px !important;
+  flex: 0 0 40px !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
+}
+body.famiWeb #reader-settings.album-settings {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 8;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+}
+body.famiWeb #reader-settings .settings-menu {
+  color: #1c1c1e;
+}
+body.famiWeb #configButton .ins-face {
+  inset: 3px;
+}
+body.famiWeb #configButton svg {
+  width: 18px;
+  height: 18px;
+  color: #1c1c1e;
+}
+body.famiWeb #bottomMenu {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+body.famiWeb #bottomMenu .navContainer {
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+body.famiWeb #sliderContainer {
+  width: 100%;
+  gap: 10px;
+}
+body.famiWeb #pageSliderLeft,
+body.famiWeb #pageSliderRight {
+  font-size: 15px;
+  color: var(--mute);
+  font-weight: 400;
+  min-width: 2em;
+}
+body.famiWeb .slider {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line);
+  touch-action: pan-x;
+}
+body.famiWeb #pageSlider {
+  touch-action: pan-x;
+}
+body.famiWeb .slider::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  filter: none;
+}
+body.famiWeb .slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  filter: none;
+}
+body.famiWeb #configMask {
+  z-index: 40;
+  background: transparent;
+}
+body.famiWeb #configMenu.batch-tag-sheet {
+  position: relative !important;
+  top: auto;
+  right: auto;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  width: min(360px, 100%);
+  max-height: none;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  background: var(--card);
+  border-radius: 22px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+}
+body.famiWeb #configMenu.batch-tag-sheet > div {
+  height: auto;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  place-content: unset;
+  place-items: unset;
+}
+body.famiWeb #configMenu * {
+  font-size: 16px;
+  font-weight: 400;
+}
+body.famiWeb #configMenu .batch-tag-head {
+  position: static;
+  margin: 0 0 10px;
+  padding: 0 44px 0 0;
+  min-height: 34px;
+  justify-content: flex-start;
+  align-items: center;
+}
+body.famiWeb #configMenu .batch-tag-head p {
+  width: auto;
+  margin: 0;
+}
+body.famiWeb #configMenu #closeMenu,
+body.famiWeb #configMenu .batch-tag-close {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 32px;
+  height: 32px;
+  background: #e5e5ea;
+  z-index: 3;
+}
+body.famiWeb #configMenu #closeMenu::after,
+body.famiWeb #configMenu #closeMenu .icon {
+  display: none !important;
+}
+body.famiWeb #configMenu .ask-skip {
+  color: var(--ink);
+  margin: 0;
+  padding: 4px 0;
+}
+body.famiWeb #configMenu .ask-skip input:checked + .ask-sw {
+  background: var(--ios-green);
+}
+body.famiWeb #pageWidthContainer,
+body.famiWeb #doublePageButton,
+body.famiWeb #splitSpreadsButton,
+body.famiWeb #sidePagesButton,
+body.famiWeb #bookShadowButton,
+body.famiWeb #themeSelectionContainer,
+body.famiWeb #languageSelectionContainer,
+body.famiWeb #paperTextureButton,
+body.famiWeb #bookFoldButton,
+body.famiWeb #lightingButton {
+  display: none !important;
+}
+body.famiWeb #loaderContainer {
+  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--accent);
+}
+body.famiWeb #loaderContainer.hidden {
+  display: none !important;
+}
+body.famiWeb #loaderContainer .thinking-five span {
+  background: var(--accent);
+}
+body.famiWeb .read-wait,
+body.famiWeb .read-miss {
+  margin: 0;
+  color: var(--mute);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+body.famiWeb .read-miss {
+  padding: 2em;
+}
+body.famiWeb #pageWait {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: none;
+  color: var(--accent);
+}
+body.famiWeb #pageWait[hidden] {
+  display: none !important;
+}
+body.famiWeb #pageWait p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mute);
+}
+body.famiWeb #pageWait .thinking-five span {
+  background: var(--accent);
+}
+body.famiWeb #endMask {
+  z-index: 50;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+body.famiWeb #endSheet.batch-tag-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: var(--sheet-action-width);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--ink);
+}
+body.famiWeb .end-cover {
+  position: relative;
+  width: min(200px, 58vw);
+  aspect-ratio: 2 / 3;
+  margin: 4px auto 16px;
+  overflow: hidden;
+  background: #efe8ea;
+}
+body.famiWeb .end-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+body.famiWeb .end-copy {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+body.famiWeb #endSheet .tag-apply {
+  width: 100%;
+  margin: 0 0 10px;
+}
+body.famiWeb #endHome.ins-icon {
+  margin: 10px auto 0;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
+}
+body.famiWeb #endHome svg {
+  width: 18px;
+  height: 18px;
+  color: #1c1c1e;
+}
+@media (min-width: 600px) {
+  body.famiWeb #configMenu.batch-tag-sheet {
+    min-height: 0;
+    padding: 16px;
+    width: min(360px, 100%);
+  }
+  body.famiWeb #endMask {
+    align-items: center;
+  }
+  body.famiWeb #endSheet.batch-tag-sheet {
+    min-height: var(--sheet-action-min-wide);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.famiWeb #navImage,
+  body.famiWeb #navIncoming {
+    transition: none !important;
+  }
+}
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}

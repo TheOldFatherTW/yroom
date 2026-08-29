@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<script>
+(function () {
+  function stopZoom(ev) { ev.preventDefault(); }
+  document.addEventListener("gesturestart", stopZoom, { passive: false });
+  document.addEventListener("gesturechange", stopZoom, { passive: false });
+})();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="YRoom"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#fafafa"/>
+<link rel="apple-touch-icon" href="./icons/b-180.png?v=1"/>
+<link rel="icon" type="image/png" href="./icons/b-180.png?v=1"/>
+<title>YRoom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./app.css?v=2"/>
+<script src="./config.js?v=2"></script>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search).get("k") || "";
+  window.YROOM_FORCE_INVITE = true;
+  window.YROOM_URL_KEY = /^[A-Za-z0-9_-]{8,128}$/.test(q) ? q : "";
+  window.YROOM_VIEW_KEY = "";
+  var origin = window.VAULT_ORIGIN;
+  if (origin) {
+    var link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = origin;
+    link.crossOrigin = "anonymous";
+    document.head.appendChild(link);
+  }
+})();
+</script>
+</head>
+<body>
+<div class="blobs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+<div class="hall with-feed is-invite" id="hall">
+  <div class="profile">
+    <h1 class="brand">YRoom</h1>
+    <p class="status" id="status"></p>
+  </div>
+  <div class="invite-panel" id="invite-panel">
+    <p class="invite-hey" id="invite-hey">安靜的讀本書吧!</p>
+    <p class="invite-safari" id="invite-safari" hidden>請用 Safari 打開</p>
+    <button type="button" class="invite-go" id="invite-go">開始</button>
+    <div class="invite-wait" id="invite-wait" hidden>
+      <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="invite-wait-bar" id="invite-wait-bar"></div>
+    </div>
+  </div>
+</div>
+<script src="./gate.js?v=1"></script>
+<script src="./hey.js?v=1"></script>
+</body>
+</html>

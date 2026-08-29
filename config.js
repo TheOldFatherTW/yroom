@@ -1,0 +1,1 @@
+window.VAULT_ORIGIN = "";

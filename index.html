@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<script>
+(function () {
+  function stopZoom(ev) { ev.preventDefault(); }
+  document.addEventListener("gesturestart", stopZoom, { passive: false });
+  document.addEventListener("gesturechange", stopZoom, { passive: false });
+})();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="YRoom"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#fafafa"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<link rel="apple-touch-icon" href="./icons/b-180.png?v=1"/>
+<link rel="icon" type="image/png" href="./icons/b-180.png?v=1"/>
+<title>YRoom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./app.css?v=2"/>
+<script src="./config.js?v=2"></script>
+<script>
+(function () {
+  var KEY_RE = /^[A-Za-z0-9_-]{8,128}$/;
+  var stored = "";
+  try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
+  var cookie = "";
+  try {
+    var m = document.cookie.match(/(?:^|; )yroom\.viewKey=([^;]*)/);
+    cookie = m ? decodeURIComponent(m[1]) : "";
+  } catch (e) {}
+  var q = new URLSearchParams(location.search).get("k") || "";
+  var h = "";
+  try {
+    var raw = (location.hash || "").replace(/^#/, "");
+    if (raw.indexOf("k=") === 0) {
+      h = decodeURIComponent((raw.slice(2).split("&")[0] || "").replace(/\+/g, " "));
+    } else {
+      h = new URLSearchParams(raw).get("k") || "";
+    }
+  } catch (e) {}
+  var fromUrl = KEY_RE.test(q) ? q : KEY_RE.test(h) ? h : "";
+  var token = fromUrl || (KEY_RE.test(stored) ? stored : "") || (KEY_RE.test(cookie) ? cookie : "");
+  window.YROOM_URL_KEY = fromUrl;
+  window.YROOM_VIEW_KEY = token;
+  if (token) {
+    try { localStorage.setItem("yroom.viewKey", token); } catch (e) {}
+    var pin = location.pathname + "?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token);
+    if (location.pathname + location.search + location.hash !== pin) {
+      history.replaceState({}, "", pin);
+    }
+  }
+})();
+</script>
+</head>
+<body>
+<div class="blobs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+<div class="hall with-feed is-booting" id="hall">
+  <div class="profile">
+    <h1 class="brand">YRoom</h1>
+    <p class="status" id="status">正在連接書櫃…</p>
+    <div class="invite-wait" id="boot-wait">
+      <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="invite-wait-bar"></div>
+    </div>
+  </div>
+  <div class="stage-bg" id="stage-bg" hidden></div>
+  <div class="home-head" id="home-head" hidden>
+    <div class="cab-hud" id="cab-hud">
+      <div class="cab-wrap">
+        <div class="cab-cover">
+          <div class="cab-ring" aria-hidden="true"></div>
+          <div class="cab-face"><img id="face-img" alt="" src="./face-default.jpg?v=2"/><span class="cab-foil" aria-hidden="true"></span></div>
+          <div class="cab-mask" aria-hidden="true"></div>
+        </div>
+        <div id="album-settings" class="album-settings">
+          <button type="button" class="ins-icon settings-toggle" id="settingsToggle" aria-label="設定" aria-expanded="false">
+            <span class="ins-ring"></span>
+            <span class="ins-face">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3.8l.6-1.3h3.6l.6 1.3 1.6.7 1.4-.5 2.5 2.5-.5 1.4.7 1.6 1.3.6v3.6l-1.3.6-.7 1.6.5 1.4-2.5 2.5-1.4-.5-1.6.7-.6 1.3h-3.6l-.6-1.3-1.6-.7-1.4.5-2.5-2.5.5-1.4-.7-1.6-1.3-.6v-3.6l1.3-.6.7-1.6-.5-1.4L6.6 4l1.4.5 1.6-.7z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><circle cx="12" cy="11.9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </span>
+          </button>
+          <div class="settings-menu" id="settingsMenu" hidden role="menu">
+            <button type="button" class="settings-entry" data-job="private" role="menuitem">
+              <span>擷取私藏</span>
+            </button>
+            <button type="button" class="settings-entry" data-job="jobs" role="menuitem">
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"></span></span>
+              <span>工作佇列</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="reader-name" id="reader-name">館主</p>
+    </div>
+    <div class="tag-board" id="tag-board">
+      <div class="mode-bar" id="mode-bar">
+        <button type="button" class="mode-btn" data-mode="manga" id="modeBooks">書籍</button>
+      </div>
+    </div>
+  </div>
+  <div class="feed" id="feed"></div>
+</div>
+<div class="settings-catch" id="settingsCatch" hidden></div>
+<div class="batch-tag-mask" id="actMask" hidden>
+  <div class="batch-tag-sheet" id="actSheet">
+    <div class="batch-tag-head">
+      <p id="actTitle">擷取私藏</p>
+      <button type="button" class="batch-tag-close" id="actClose" aria-label="關閉">×</button>
+    </div>
+    <div id="actBody">
+      <p>重掃全部收藏。已齊的本會跳過，只補缺頁與壞頁。</p>
+      <button type="button" class="tag-apply" id="actGo">
+        <span class="tag-apply-face">確認</span>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="home-install" id="home-install" hidden>
+  <p>請點底部分享，再選加入主畫面</p>
+  <button type="button" class="invite-go" id="home-installed">我已加入</button>
+</div>
+<div class="batch-tag-mask" id="jobsMask" hidden>
+  <div class="batch-tag-sheet" id="jobsSheet">
+    <div class="batch-tag-head">
+      <p>工作佇列</p>
+      <button type="button" class="batch-tag-close" id="jobsClose" aria-label="關閉">×</button>
+    </div>
+    <div id="jobsBody"></div>
+  </div>
+</div>
+<script src="./gate.js?v=1"></script>
+<script src="./app.js?v=2"></script>
+</body>
+</html>
