@@ -14,6 +14,12 @@
   var jobsBody = document.getElementById("jobsBody");
   var homeInstall = document.getElementById("home-install");
   var homeInstalled = document.getElementById("home-installed");
+  var coverInput = document.getElementById("cover-input");
+  var backdropInput = document.getElementById("backdrop-input");
+  var stageBg = document.getElementById("stage-bg");
+  var cabHud = document.getElementById("cab-hud");
+  var faceImg = document.getElementById("face-img");
+  var readerName = document.getElementById("reader-name");
   var jobsEntry = menu ? menu.querySelector('.settings-entry[data-job="jobs"]') : null;
   var busy = false;
   var retryTimer = 0;
@@ -23,6 +29,15 @@
   var selected = new Set();
   var selectMode = false;
   var blobUrls = [];
+  var backdropUrl = "";
+  var waitBusy = false;
+  var waitTimer = 0;
+  var prefetchCtl = null;
+  var readerOpen = false;
+  var readerStaySeq = 0;
+  var readerReadyTimer = 0;
+  var hintTimer = 0;
+  var bridgeBackAt = 0;
 
   if (window.YRoomGate) {
     window.YRoomGate.blockWebChrome();
@@ -84,7 +99,7 @@
     var profile = document.querySelector(".profile");
     if (profile) profile.hidden = true;
     home.hidden = false;
-    document.getElementById("cab-hud").hidden = false;
+    if (cabHud) cabHud.hidden = false;
   }
 
   function failGate(msg) {
@@ -168,14 +183,170 @@
     window.thumbObserver.observe(img);
   }
 
-  function setJobRun(on) {
+  function setJobRun(on, entry) {
     var cover = document.querySelector("#cab-hud .cab-cover");
     if (cover) cover.classList.toggle("is-run", !!on);
-    if (jobsEntry) {
-      jobsEntry.classList.toggle("is-run", !!on);
-      var badge = jobsEntry.querySelector(".ins-icon");
+    var row = entry || jobsEntry;
+    if (row) {
+      row.classList.toggle("is-run", !!on);
+      var badge = row.querySelector(".ins-icon");
       if (badge) badge.classList.toggle("is-run", !!on);
     }
+  }
+
+  function layoutStage() {
+    if (!stageBg || !hall || stageBg.hidden) return;
+    var hallBox = hall.getBoundingClientRect();
+    var tags = document.getElementById("tag-board");
+    var startBox = tags && !tags.hidden ? tags.getBoundingClientRect() : (feed ? feed.getBoundingClientRect() : null);
+    var endBox = feed ? feed.getBoundingClientRect() : startBox;
+    var start = startBox ? Math.max(0, startBox.top - hallBox.top) : 180;
+    var end = endBox ? Math.max(start + 24, endBox.top - hallBox.top) : start + 80;
+    var fade = "linear-gradient(to bottom, #000 0, #000 " + Math.round(start) + "px, transparent " + Math.round(end) + "px)";
+    stageBg.style.height = Math.round(end) + "px";
+    stageBg.style.webkitMaskImage = fade;
+    stageBg.style.maskImage = fade;
+    if (backdropUrl) tuneNameOnBackdrop(backdropUrl);
+  }
+
+  function lumaBehindName(img, stage, nameEl) {
+    var stageBox = stage.getBoundingClientRect();
+    var nameBox = nameEl.getBoundingClientRect();
+    var iw = img.naturalWidth;
+    var ih = img.naturalHeight;
+    if (stageBox.width < 8 || nameBox.height < 4 || !iw || !ih) return null;
+    var scale = Math.max(stageBox.width / iw, stageBox.height / ih);
+    var ox = (stageBox.width - iw * scale) / 2;
+    var pad = 10;
+    var sx = (nameBox.left - stageBox.left - ox - pad) / scale;
+    var sy = (nameBox.top - stageBox.top - pad) / scale;
+    var sw = (nameBox.width + pad * 2) / scale;
+    var sh = (nameBox.height + pad * 2) / scale;
+    var x = Math.max(0, Math.min(iw - 1, sx));
+    var y = Math.max(0, Math.min(ih - 1, sy));
+    var w = Math.max(1, Math.min(iw - x, sw));
+    var h = Math.max(1, Math.min(ih - y, sh));
+    var canvas = document.createElement("canvas");
+    canvas.width = 24;
+    canvas.height = 12;
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    try {
+      ctx.drawImage(img, x, y, w, h, 0, 0, 24, 12);
+      var data = ctx.getImageData(0, 0, 24, 12).data;
+      var sum = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        sum += (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+      }
+      return sum / (data.length / 4);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function tuneNameOnBackdrop(url) {
+    if (!readerName || !stageBg || stageBg.hidden || !url) return;
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function () {
+      if (url !== backdropUrl) return;
+      var luma = lumaBehindName(img, stageBg, readerName);
+      var light = luma != null && luma >= 0.65;
+      readerName.classList.toggle("is-on-light", light);
+      readerName.classList.toggle("is-on-dark", !light);
+    };
+    img.src = url;
+  }
+
+  function paintStage(reader) {
+    if (!stageBg || !hall) return;
+    if (reader && reader.has_backdrop && reader.id) {
+      backdropUrl = vault() + "/backdrop?person=" + encodeURIComponent(reader.id) + "&k=" + encodeURIComponent(KEY) + "&r=" + (reader.backdrop_rev || 0);
+      hall.classList.add("has-backdrop");
+      if (readerName) {
+        readerName.classList.remove("is-on-light");
+        readerName.classList.add("is-on-dark");
+      }
+      stageBg.style.backgroundImage = "url(" + backdropUrl + ")";
+      stageBg.hidden = false;
+      requestAnimationFrame(layoutStage);
+    } else {
+      backdropUrl = "";
+      hall.classList.remove("has-backdrop");
+      if (readerName) readerName.classList.remove("is-on-light", "is-on-dark");
+      stageBg.hidden = true;
+      stageBg.style.backgroundImage = "";
+    }
+  }
+
+  function renderMe(reader) {
+    if (!reader) return;
+    if (readerName) readerName.textContent = reader.display_name || "館主";
+    if (faceImg) {
+      if (reader.has_cover) {
+        faceImg.src = vault() + "/cover?person=" + encodeURIComponent(reader.id || "owner") + "&k=" + encodeURIComponent(KEY) + "&r=" + (reader.cover_rev || 0);
+      } else {
+        faceImg.src = "./face-default.jpg?v=2";
+      }
+      faceImg.hidden = false;
+    }
+    if (cabHud) cabHud.hidden = false;
+    if (home) home.hidden = false;
+    paintStage(reader);
+  }
+
+  function showWaitCard(title) {
+    var mask = document.getElementById("waitMask");
+    var head = document.getElementById("waitTitle");
+    var pct = document.getElementById("waitPct");
+    if (head) head.textContent = title || "更換背景中";
+    if (pct) pct.textContent = "0%";
+    if (mask) mask.hidden = false;
+  }
+
+  function setWaitPct(n) {
+    var pct = document.getElementById("waitPct");
+    if (pct) pct.textContent = Math.max(0, Math.min(100, Math.round(n))) + "%";
+  }
+
+  function hideWaitCard() {
+    var mask = document.getElementById("waitMask");
+    if (mask) mask.hidden = true;
+    if (waitTimer) {
+      window.clearInterval(waitTimer);
+      waitTimer = 0;
+    }
+  }
+
+  function tickWait() {
+    var pct = document.getElementById("waitPct");
+    var n = parseInt((pct && pct.textContent) || "0", 10) || 0;
+    if (n < 90) setWaitPct(n + 1);
+  }
+
+  function postFile(url, body, onPct) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
+        else reject(new Error("fail"));
+      };
+      xhr.onerror = function () { reject(new Error("net")); };
+      if (xhr.upload) {
+        xhr.upload.onprogress = function (ev) {
+          if (ev.lengthComputable && ev.total) onPct(Math.round((ev.loaded / ev.total) * 100));
+        };
+      }
+      xhr.send(body);
+    });
+  }
+
+  function refreshMe() {
+    return get("/api/me").then(function (me) {
+      if (me) renderMe(me);
+      return me;
+    });
   }
 
   function enterSelect(id) {
@@ -331,11 +502,217 @@
       tile.addEventListener("click", function () {
         if (busy || selectMode) return;
         if (!item.readable) return;
-        location.href = "./read.html?book=" + encodeURIComponent(item.id) + "&k=" + encodeURIComponent(KEY) + "#k=" + encodeURIComponent(KEY);
+        openReader(item);
       });
       feed.appendChild(tile);
     });
     paintPicks();
+  }
+
+  function tileNode(item) {
+    if (!feed || !item || !item.id) return null;
+    var tiles = feed.querySelectorAll(".tile");
+    for (var i = 0; i < tiles.length; i++) {
+      if (tiles[i].dataset.id === item.id) return tiles[i];
+    }
+    return null;
+  }
+
+  function tileCover(item) {
+    var tile = tileNode(item);
+    if (!tile) return "";
+    var img = tile.querySelector("img");
+    if (img && (img.currentSrc || img.src)) return img.currentSrc || img.src;
+    return "";
+  }
+
+  function sizeBridgeCover(coverEl, item) {
+    if (!coverEl) return;
+    coverEl.style.width = "";
+    coverEl.style.height = "";
+    var tile = tileNode(item);
+    if (!tile) return;
+    var box = tile.getBoundingClientRect();
+    if (box.width < 8 || box.height < 8) return;
+    coverEl.style.width = Math.round(box.width) + "px";
+    coverEl.style.height = Math.round(box.height) + "px";
+  }
+
+  function readingUrl(item, extra) {
+    var q = new URLSearchParams();
+    q.set("book", item.id);
+    q.set("k", KEY);
+    var end = (extra && extra.end) || (item.finished ? "1" : "");
+    if (end) q.set("end", end);
+    return "./read.html?" + q.toString() + "#k=" + encodeURIComponent(KEY);
+  }
+
+  function rememberReading(item, cover) {
+    try {
+      sessionStorage.setItem("yroom.reading", JSON.stringify({
+        book: item.id,
+        k: KEY,
+        end: item.finished ? "1" : "",
+        cover: cover || "",
+      }));
+    } catch (e) {}
+  }
+
+  function stayOverlayUrl(n) {
+    var raw = (location.hash || "").replace(/^#/, "").replace(/&?stay=\d+/g, "").replace(/&$/, "");
+    return location.pathname + location.search + "#" + (raw ? raw + "&stay=" + n : "stay=" + n);
+  }
+
+  function cleanOverlayUrl() {
+    var raw = (location.hash || "").replace(/^#/, "").replace(/&?stay=\d+/g, "").replace(/&$/, "");
+    return location.pathname + location.search + (raw ? "#" + raw : "");
+  }
+
+  function padOverlay() {
+    if (!readerOpen) return;
+    try {
+      readerStaySeq += 1;
+      history.pushState({ yroomReader: 1, n: readerStaySeq }, "", stayOverlayUrl(readerStaySeq));
+      readerStaySeq += 1;
+      history.pushState({ yroomReader: 1, n: readerStaySeq }, "", stayOverlayUrl(readerStaySeq));
+    } catch (e) {}
+  }
+
+  function closeReader() {
+    var layer = document.getElementById("reader-layer");
+    var frame = document.getElementById("reader-frame");
+    readerOpen = false;
+    document.documentElement.classList.remove("is-reading");
+    if (layer) {
+      layer.hidden = true;
+      layer.classList.remove("is-live");
+    }
+    if (frame) {
+      try { frame.src = "about:blank"; } catch (e) {}
+    }
+    try { sessionStorage.removeItem("yroom.reading"); } catch (e) {}
+    try { history.replaceState({}, "", cleanOverlayUrl()); } catch (e) {}
+    window.clearTimeout(readerReadyTimer);
+    window.clearTimeout(hintTimer);
+  }
+
+  function showReaderLive() {
+    var layer = document.getElementById("reader-layer");
+    if (!layer || !readerOpen) return;
+    layer.classList.add("is-live");
+    window.clearTimeout(readerReadyTimer);
+    window.clearTimeout(hintTimer);
+    var hint = document.getElementById("reader-hint");
+    if (hint) hint.hidden = true;
+  }
+
+  function prefetchReader(item) {
+    if (!item || !item.id || !KEY) return;
+    var origin = vault();
+    if (!origin) return;
+    if (prefetchCtl && prefetchCtl._book === item.id) return;
+    if (prefetchCtl) prefetchCtl.abort();
+    prefetchCtl = new AbortController();
+    prefetchCtl._book = item.id;
+    var signal = prefetchCtl.signal;
+    var bid = encodeURIComponent(item.id);
+    var tok = encodeURIComponent(KEY);
+    [
+      "./read.html",
+      "./read.css?v=14",
+      origin + "/static/reader.js?v=25",
+      origin + "/static/css/global.css?v=20",
+      origin + "/static/css/read.css?v=20",
+      origin + "/static/css/navImage.css?v=20",
+      origin + "/static/css/navMenu.css?v=20",
+      origin + "/static/css/config.css?v=20",
+      origin + "/static/css/mybook.css?v=20",
+    ].forEach(function (url) {
+      fetch(url, { signal: signal, mode: "cors", credentials: "omit" }).catch(function () {});
+    });
+    var auth = "?book=" + bid + "&k=" + tok;
+    Promise.all([
+      fetch(origin + "/api/book" + auth, { signal: signal, mode: "cors" }).then(function (r) { return r.json(); }),
+      fetch(origin + "/api/prefs" + auth, { signal: signal, mode: "cors" }).then(function (r) { return r.json(); }).catch(function () { return {}; }),
+    ]).then(function (pair) {
+      var book = pair[0] || {};
+      var prefs = pair[1] || {};
+      var leaves = book.leaves || [];
+      if (!leaves.length) return;
+      var posKey = book.positionKey || item.id;
+      var idx = 0;
+      if (prefs.finished && prefs.finished[posKey]) {
+        idx = Math.max(0, leaves.length - 1);
+      } else {
+        var saved = prefs.positions && prefs.positions[posKey];
+        if (Number.isFinite(saved)) idx = Math.max(0, Math.min(saved, leaves.length - 1));
+      }
+      [leaves[idx], leaves[idx + 1], leaves[idx - 1]].forEach(function (leaf) {
+        if (!leaf || !leaf.src) return;
+        var im = new Image();
+        im.decoding = "async";
+        im.src = origin + "/pages/" + encodeURIComponent(leaf.src) + "?book=" + bid + "&k=" + tok;
+      });
+    }).catch(function () {});
+  }
+
+  function openReader(item, opts) {
+    if (!item || !item.id) return;
+    var layer = document.getElementById("reader-layer");
+    var frame = document.getElementById("reader-frame");
+    var coverEl = document.getElementById("reader-bridge-cover");
+    var hint = document.getElementById("reader-hint");
+    var bridge = document.getElementById("reader-bridge");
+    if (!layer || !frame) {
+      location.replace(readingUrl(item, opts));
+      return;
+    }
+    var cover = (opts && opts.cover) || tileCover(item);
+    if (!cover && item.has_cover) cover = coverUrl(item);
+    if (coverEl) {
+      if (cover) {
+        coverEl.hidden = false;
+        coverEl.src = cover;
+        sizeBridgeCover(coverEl, item);
+      } else {
+        coverEl.removeAttribute("src");
+        coverEl.hidden = true;
+        coverEl.style.width = "";
+        coverEl.style.height = "";
+      }
+    }
+    if (bridge) bridge.classList.toggle("has-cover", !!cover);
+    window.clearTimeout(hintTimer);
+    if (hint) hint.hidden = false;
+    rememberReading(item, cover);
+    document.documentElement.classList.add("is-reading");
+    layer.hidden = false;
+    layer.classList.remove("is-live");
+    var wasOpen = readerOpen;
+    readerOpen = true;
+    if (!wasOpen) padOverlay();
+    prefetchReader(item);
+    var url = readingUrl(item, opts);
+    try {
+      if (frame.getAttribute("src") === url && frame.contentWindow) {
+        frame.contentWindow.location.replace(url);
+      } else {
+        frame.src = url;
+      }
+    } catch (e) {
+      frame.src = url;
+    }
+    window.clearTimeout(readerReadyTimer);
+    readerReadyTimer = window.setTimeout(showReaderLive, 15000);
+  }
+
+  function openSaved(data) {
+    if (!data || !data.book) return;
+    openReader({
+      id: data.book,
+      finished: data.end === "1",
+      has_cover: !!data.cover,
+    }, { end: data.end, cover: data.cover });
   }
 
   function pickMode(next) {
@@ -415,6 +792,8 @@
     if (!btn || btn.classList.contains("is-run")) return;
     closeMenu();
     var job = btn.getAttribute("data-job");
+    if (job === "cover" && coverInput) coverInput.click();
+    if (job === "backdrop" && backdropInput) backdropInput.click();
     if (job === "private") actMask.hidden = false;
     if (job === "jobs") {
       jobsMask.hidden = false;
@@ -506,7 +885,7 @@
       : get("/api/me");
     meAsk.then(function (me) {
       if (!me) throw new Error("no_me");
-      document.getElementById("reader-name").textContent = me.display_name || "館主";
+      renderMe(me);
       showHome();
       ensureRail();
       if (homeInstall && typeof navigator.standalone === "boolean" && !navigator.standalone) {
@@ -524,8 +903,14 @@
       catalog = {};
       allItems.forEach(function (item) { catalog[item.id] = item; });
       paintFeed();
+      requestAnimationFrame(layoutStage);
       refreshJobs();
       setInterval(refreshJobs, 4000);
+      if (window.__yroomPendingRead) {
+        var pending = window.__yroomPendingRead;
+        window.__yroomPendingRead = null;
+        openSaved(pending);
+      }
     }).catch(function () {
       failGate();
       scheduleReconnect();
@@ -553,6 +938,95 @@
       scheduleReconnect();
     });
   }
+
+  if (coverInput) coverInput.addEventListener("change", function () {
+    var file = coverInput.files && coverInput.files[0];
+    if (!file) return;
+    var entry = document.querySelector('.settings-entry[data-job="cover"]');
+    setJobRun(true, entry);
+    var fd = new FormData();
+    fd.append("cover", file);
+    fetch(vault() + "/api/cover?k=" + encodeURIComponent(KEY), { method: "POST", body: fd })
+      .then(function () { return refreshMe(); })
+      .finally(function () {
+        setJobRun(false, entry);
+        coverInput.value = "";
+      });
+  });
+
+  if (backdropInput) backdropInput.addEventListener("change", function () {
+    var file = backdropInput.files && backdropInput.files[0];
+    if (!file || waitBusy) {
+      backdropInput.value = "";
+      return;
+    }
+    waitBusy = true;
+    showWaitCard("更換背景中");
+    waitTimer = window.setInterval(tickWait, 280);
+    var entry = document.querySelector('.settings-entry[data-job="backdrop"]');
+    setJobRun(true, entry);
+    var fd = new FormData();
+    fd.append("backdrop", file);
+    postFile(vault() + "/api/backdrop?k=" + encodeURIComponent(KEY), fd, function (n) {
+      if (waitTimer) {
+        window.clearInterval(waitTimer);
+        waitTimer = 0;
+      }
+      setWaitPct(n);
+    }).then(function () {
+      setWaitPct(100);
+      return refreshMe();
+    }).finally(function () {
+      hideWaitCard();
+      setJobRun(false, entry);
+      waitBusy = false;
+      backdropInput.value = "";
+    });
+  });
+
+  var readerBack = document.getElementById("reader-back");
+  if (readerBack) {
+    readerBack.addEventListener("pointerup", function (ev) {
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+      ev.preventDefault();
+      if (Date.now() - bridgeBackAt < 400) return;
+      bridgeBackAt = Date.now();
+      closeReader();
+    });
+    readerBack.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      if (Date.now() - bridgeBackAt < 400) return;
+      bridgeBackAt = Date.now();
+      closeReader();
+    });
+  }
+
+  window.addEventListener("message", function (ev) {
+    if (ev.origin !== location.origin) return;
+    var kind = ev.data && ev.data.fami;
+    if (kind === "close-reader") closeReader();
+    else if (kind === "reader-ready") showReaderLive();
+    else if (kind === "reader-loading" && readerOpen) {
+      var layer = document.getElementById("reader-layer");
+      if (layer) layer.classList.remove("is-live");
+    }
+  });
+  window.addEventListener("popstate", function () {
+    if (readerOpen) {
+      padOverlay();
+      return;
+    }
+    if (/stay=\d+/.test(location.hash || "")) {
+      try { history.replaceState({}, "", cleanOverlayUrl()); } catch (e) {}
+    }
+  });
+  window.addEventListener("resize", layoutStage);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", layoutStage);
+
+  window.YRoomShelf = {
+    openSaved: openSaved,
+    closeReader: closeReader,
+  };
 
   boot();
 })();

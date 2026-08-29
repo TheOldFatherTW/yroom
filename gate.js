@@ -111,12 +111,18 @@
     var painted = -1;
     var kbOn = false;
     var lastHeight = -1;
+    var lastTop = -1;
     function apply() {
       var lift = Math.max(0, window.innerHeight - vv.height);
       var height = Math.round(vv.height);
+      var top = Math.round(vv.offsetTop);
       if (Math.abs(height - lastHeight) >= 2 || lastHeight < 0) {
         lastHeight = height;
         document.documentElement.style.setProperty("--vvh", height + "px");
+      }
+      if (Math.abs(top - lastTop) >= 2 || lastTop < 0) {
+        lastTop = top;
+        document.documentElement.style.setProperty("--vv-top", top + "px");
       }
       if (Math.abs(lift - painted) >= 8) {
         painted = lift;
