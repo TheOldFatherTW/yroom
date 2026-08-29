@@ -945,6 +945,15 @@ html.has-rail .feed {
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.26);
   -webkit-overflow-scrolling: touch;
 }
+#jobsBody {
+  padding: 4px 2px 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink);
+}
+#jobsBody p { margin: 0 0 10px; }
+#jobsBody p:last-child { margin-bottom: 0; }
 .batch-tag-sheet.is-wait {
   text-align: center;
 }

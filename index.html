@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=2"/>
+<link rel="stylesheet" href="./app.css?v=3"/>
 <script src="./config.js?v=1787986054"></script>
 <script>
 (function () {
@@ -87,10 +87,11 @@
           </button>
           <div class="settings-menu" id="settingsMenu" hidden role="menu">
             <button type="button" class="settings-entry" data-job="private" role="menuitem">
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 8h5M9.5 12h5M9.5 16h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></span>
               <span>擷取私藏</span>
             </button>
             <button type="button" class="settings-entry" data-job="jobs" role="menuitem">
-              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"></span></span>
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="12" height="15" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 4.5h6v2.2H9z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 11h6M9 14.5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></span>
               <span>工作佇列</span>
             </button>
           </div>
@@ -100,12 +101,14 @@
     </div>
     <div class="tag-board" id="tag-board">
       <div class="mode-bar" id="mode-bar">
-        <button type="button" class="mode-btn" data-mode="manga" id="modeBooks">書籍</button>
+        <button type="button" class="mode-btn" data-mode="fav" id="modeFav">最愛</button>
+        <button type="button" class="mode-btn is-on" data-mode="manga" id="modeBooks">書籍</button>
       </div>
     </div>
   </div>
   <div class="feed" id="feed"></div>
 </div>
+<aside class="photo-rail" id="photo-rail" hidden aria-label="書櫃操作"></aside>
 <div class="settings-catch" id="settingsCatch" hidden></div>
 <div class="batch-tag-mask" id="actMask" hidden>
   <div class="batch-tag-sheet" id="actSheet">
@@ -135,6 +138,6 @@
   </div>
 </div>
 <script src="./gate.js?v=2"></script>
-<script src="./app.js?v=3"></script>
+<script src="./app.js?v=4"></script>
 </body>
 </html>
