@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://healthy-striking-mall-challenging.trycloudflare.com";
+window.VAULT_ORIGIN = "https://verification-headed-seattle-monitor.trycloudflare.com";
