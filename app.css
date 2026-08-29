@@ -124,17 +124,13 @@ html, body {
   display: none !important;
 }
 .profile { text-align: center; }
-.lissajous,
 .subway-y {
   width: 88px;
   height: 88px;
   margin: 0 auto 12px;
-  color: var(--accent);
-}
-.subway-y {
   color: #fccc0a;
 }
-.liss-svg, .liss-bar-svg, .subway-y svg { width: 100%; height: 100%; display: block; }
+.subway-y svg { width: 100%; height: 100%; display: block; }
 h1.brand {
   margin: 0;
   font-family: Unbounded, "Segoe UI", sans-serif;
@@ -144,7 +140,6 @@ h1.brand {
   color: var(--rose);
 }
 .hall.with-feed:not(.is-invite):not(.is-booting) h1.brand { display: none !important; }
-.hall.with-feed:not(.is-invite):not(.is-booting) .lissajous,
 .hall.with-feed:not(.is-invite):not(.is-booting) .subway-y { display: none !important; }
 .status { margin: 22px 0 0; min-height: 1.5em; font-size: 15px; color: var(--mute); }
 .hall.with-feed.is-booting .status {
@@ -154,6 +149,12 @@ h1.brand {
 }
 .invite-panel { width: min(420px, 92vw); margin: 4px auto 0; text-align: center; }
 .invite-hey { margin: 18px 0 0; font-size: clamp(18px, 5.4vw, 22px); font-weight: 600; }
+.invite-safari[hidden] { display: none !important; }
+.invite-safari {
+  margin: 20px 0 0;
+  font-size: 16px;
+  color: var(--mute);
+}
 button {
   font: inherit;
   color: inherit;
@@ -668,26 +669,6 @@ html.has-rail .feed {
   /* 多選也維持 manipulation。改 none 時 iOS 會長押變 pointercancel，再當成輕點把同一本取消。 */
   touch-action: manipulation;
 }
-.tile.tile-add {
-  background: #f7f7f7;
-  color: var(--mute);
-  box-shadow: none;
-  border: 2px dashed #c8c8c8;
-}
-.tile .tile-plus {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  pointer-events: none;
-}
-.tile .tile-plus svg {
-  width: 36px;
-  height: 36px;
-  color: #8e8e8e;
-}
 .tile-heart {
   position: absolute;
   top: 6px;
@@ -1108,117 +1089,12 @@ label { display: block; margin: 18px 0 8px; color: var(--mute); text-align: left
     bottom: 10px;
   }
 }
-.list-tag-mask {
-  padding-left: 0;
-  padding-right: 0;
-  padding-bottom: 0;
-}
-.list-tag-sheet {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 100%;
-  min-height: var(--sheet-find-min);
-  max-height: var(--sheet-find-max);
-  overflow: hidden;
-  touch-action: none;
-  overscroll-behavior: none;
-  padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
-  border-radius: 22px 22px 0 0;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.26);
-}
-.list-tag-body {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
-}
 .tag-modal-open,
 .tag-modal-open body {
   overflow: hidden;
   height: 100%;
   touch-action: none;
   overscroll-behavior: none;
-}
-.list-tag-sheet .batch-tag-head {
-  flex: 0 0 auto;
-}
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.list-tag-sheet .tag-row {
-  margin: 0 0 16px;
-}
-button.tag-chip {
-  margin: 0;
-  width: auto;
-  display: inline-flex;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  cursor: pointer;
-  letter-spacing: 0.02em;
-}
-.list-tag-sheet button.tag-chip.is-on,
-.batch-tag-sheet button.tag-chip.is-on {
-  background: linear-gradient(120deg, #fa7e1e 0%, #d62976 48%, #962fbf 100%);
-  border-color: transparent;
-  color: #fff;
-}
-.ask-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 200000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.4);
-}
-.ask-mask[hidden] {
-  display: none !important;
-}
-.ask-card {
-  width: min(300px, 100%);
-  background: #fff;
-  border-radius: 14px;
-  padding: 22px 20px 16px;
-  color: #1c1c1e;
-}
-.ask-card p {
-  margin: 0 0 18px;
-  font-size: 17px;
-  font-weight: 600;
-  text-align: center;
-}
-.ask-actions {
-  display: flex;
-  gap: 8px;
-}
-.ask-actions button {
-  flex: 1;
-  height: 44px;
-  border: 0;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-}
-.ask-no {
-  background: #f2f2f7;
-  color: #1c1c1e;
-}
-.ask-yes {
-  background: linear-gradient(120deg, #fa7e1e 0%, #d62976 48%, #962fbf 100%);
-  color: #fff;
 }
 .tile.is-job .tile-shield {
   box-shadow: inset 0 0 0 3px var(--rose);
@@ -1233,43 +1109,11 @@ button.tag-chip {
   font: inherit;
   resize: vertical;
 }
-.batch-tag-sheet .apple-row,
-.list-tag-sheet .apple-row {
+.batch-tag-sheet .apple-row {
   margin: 0 0 16px;
 }
-.batch-tag-sheet .tag-apply,
-.list-tag-sheet .tag-apply {
+.batch-tag-sheet .tag-apply {
   margin-top: 8px;
-}
-@media (min-width: 600px) {
-  .list-tag-mask {
-    align-items: center;
-    padding: 24px 20px;
-  }
-  .list-tag-sheet {
-    width: min(720px, 100%);
-    min-height: var(--sheet-find-min-wide);
-    max-height: var(--sheet-find-max-wide);
-    border-radius: 22px;
-    padding: 18px 20px 20px;
-  }
-}
-
-@media (min-width: 600px) and (pointer: coarse) {
-  .list-tag-sheet {
-    width: min(740px, calc(100% - 48px));
-  }
-  .list-tag-sheet button.tag-chip {
-    font-size: 14px;
-    padding: 8px 14px;
-  }
-}
-@media (min-width: 1100px) {
-  .list-tag-sheet {
-    width: min(760px, 100%);
-    min-height: var(--sheet-find-min-wide);
-    max-height: var(--sheet-find-max-wide);
-  }
 }
 .kb-up .blobs {
   display: none;
@@ -1287,7 +1131,6 @@ button.tag-chip {
   padding-top: calc(8px + env(safe-area-inset-top, 0px));
   padding-bottom: 8px;
 }
-.kb-up .hall.is-invite .lissajous,
 .kb-up .hall.is-invite .subway-y {
   display: none;
 }
@@ -1301,31 +1144,6 @@ button.tag-chip {
 }
 .kb-up .batch-tag-sheet {
   max-height: calc(100% - 16px);
-}
-.kb-up .list-tag-mask {
-  align-items: stretch;
-  padding: 0;
-}
-.kb-up .list-tag-sheet {
-  width: 100%;
-  min-height: 0;
-  height: 100%;
-  max-height: 100%;
-  border-radius: 22px 22px 0 0;
-}
-.ask-mask.is-note {
-  background: transparent;
-  pointer-events: none;
-  transition: opacity 0.28s ease;
-}
-.ask-mask.is-note.is-out {
-  opacity: 0;
-}
-.ask-mask.is-note .ask-actions {
-  display: none !important;
-}
-.ask-mask.is-note .ask-card {
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
 }
 .hp-label {
   display: flex;
