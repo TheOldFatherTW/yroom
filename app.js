@@ -821,6 +821,10 @@
     });
   });
 
+  if (window.YRoomGate && window.YRoomGate.lockSheetPage) {
+    if (actMask) window.YRoomGate.lockSheetPage(actMask);
+    if (jobsMask) window.YRoomGate.lockSheetPage(jobsMask);
+  }
   document.getElementById("jobsClose").addEventListener("click", function () {
     jobsMask.hidden = true;
   });

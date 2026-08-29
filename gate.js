@@ -136,6 +136,36 @@
     apply();
   }
 
+  function lockSheetPage(mask) {
+    if (!mask || mask.dataset.sheetLock) return;
+    mask.dataset.sheetLock = "1";
+    var lastY = 0;
+    function paintOpen() {
+      var open = !!document.querySelector(".batch-tag-mask:not([hidden]), .ask-mask:not([hidden]), .list-tag-mask:not([hidden])");
+      document.documentElement.classList.toggle("tag-modal-open", open);
+    }
+    paintOpen();
+    if (window.MutationObserver) {
+      new MutationObserver(paintOpen).observe(mask, { attributes: true, attributeFilter: ["hidden"] });
+    }
+    mask.addEventListener("touchstart", function (ev) {
+      if (ev.touches && ev.touches[0]) lastY = ev.touches[0].clientY;
+    }, { passive: true });
+    mask.addEventListener("touchmove", function (ev) {
+      var node = ev.target && ev.target.nodeType === 1 ? ev.target : ev.target && ev.target.parentElement;
+      var scroller = node && node.closest && node.closest(".list-tag-body, .tag-picker-suggest");
+      var y = ev.touches && ev.touches[0] ? ev.touches[0].clientY : lastY;
+      var dy = y - lastY;
+      lastY = y;
+      if (scroller && scroller.scrollHeight > scroller.clientHeight + 1) {
+        var atTop = scroller.scrollTop <= 0 && dy > 0;
+        var atBot = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && dy < 0;
+        if (!atTop && !atBot) return;
+      }
+      ev.preventDefault();
+    }, { passive: false });
+  }
+
   function needsSafari() {
     var ua = navigator.userAgent || "";
     var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -165,6 +195,7 @@
     currentKey: currentKey,
     blockWebChrome: blockWebChrome,
     bindKeyboard: bindKeyboard,
+    lockSheetPage: lockSheetPage,
     needsSafari: needsSafari,
     refreshOrigin: refreshOrigin,
   };

@@ -1135,6 +1135,13 @@ label { display: block; margin: 18px 0 8px; color: var(--mute); text-align: left
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
+.tag-modal-open,
+.tag-modal-open body {
+  overflow: hidden;
+  height: 100%;
+  touch-action: none;
+  overscroll-behavior: none;
+}
 .list-tag-sheet .batch-tag-head {
   flex: 0 0 auto;
 }
