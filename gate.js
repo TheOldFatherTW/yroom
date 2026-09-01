@@ -64,7 +64,12 @@
     } catch (e) {}
   }
 
+  function isIPhone() {
+    return /iPhone|iPod/.test(navigator.userAgent || "");
+  }
+
   function pinKey(token) {
+    if (isIPhone()) return;
     if (typeof navigator.standalone === "boolean" && !navigator.standalone) {
       var pin = location.pathname + "?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token);
       if (location.pathname + location.search + location.hash !== pin) {
@@ -191,6 +196,7 @@
     api: api,
     apiRetry: apiRetry,
     savePersonal: savePersonal,
+    isIPhone: isIPhone,
     pinKey: pinKey,
     currentKey: currentKey,
     blockWebChrome: blockWebChrome,

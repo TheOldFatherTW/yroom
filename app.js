@@ -897,7 +897,6 @@
     }
     if (window.YRoomGate) {
       window.YRoomGate.savePersonal(KEY);
-      window.YRoomGate.pinKey(KEY);
     }
     var gate = window.YRoomGate;
     var meAsk = gate
@@ -911,7 +910,10 @@
       if (homeInstall && typeof navigator.standalone === "boolean" && !navigator.standalone) {
         var seen = "";
         try { seen = localStorage.getItem("yroom.installed") || ""; } catch (e) {}
-        if (!seen) homeInstall.hidden = false;
+        if (!seen) {
+          if (window.YRoomGate && window.YRoomGate.pinKey) window.YRoomGate.pinKey(KEY);
+          homeInstall.hidden = false;
+        }
       }
       if (gate) {
         return gate.apiRetry("/api/shelf?limit=200", KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; });

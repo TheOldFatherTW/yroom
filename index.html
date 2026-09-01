@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=9"/>
+<link rel="stylesheet" href="./app.css?v=10"/>
 <script src="./config.js?v=1788225932"></script>
 <script>
 (function () {
@@ -78,7 +78,7 @@
   window.YROOM_VIEW_KEY = token;
   if (token) {
     try { localStorage.setItem("yroom.viewKey", token); } catch (e) {}
-    if (typeof navigator.standalone === "boolean" && !navigator.standalone) {
+    if (!/iPhone|iPod/.test(navigator.userAgent || "") && typeof navigator.standalone === "boolean" && !navigator.standalone) {
       var pin = location.pathname + "?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token);
       if (location.pathname + location.search + location.hash !== pin) {
         history.replaceState({}, "", pin);
@@ -236,8 +236,8 @@
     <div id="jobsBody"></div>
   </div>
 </div>
-<script src="./gate.js?v=5"></script>
-<script src="./hey.js?v=4"></script>
-<script src="./app.js?v=8"></script>
+<script src="./gate.js?v=6"></script>
+<script src="./hey.js?v=5"></script>
+<script src="./app.js?v=9"></script>
 </body>
 </html>

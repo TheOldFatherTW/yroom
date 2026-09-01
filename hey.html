@@ -3,10 +3,241 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
-<title>YRoom</title>
 <script>
-location.replace("./index.html" + location.search + location.hash);
+(function () {
+  function bounceToReader() {
+    try {
+      var raw = sessionStorage.getItem("yroom.reading");
+      if (!raw) return false;
+      var data = JSON.parse(raw);
+      if (!data || !data.book) return false;
+      window.__yroomPendingRead = data;
+      if (window.YRoomShelf && window.YRoomShelf.openSaved) {
+        window.YRoomShelf.openSaved(data);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+  bounceToReader();
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) bounceToReader();
+  });
+})();
+</script>
+<script>
+(function () {
+  function stopZoom(ev) { ev.preventDefault(); }
+  document.addEventListener("gesturestart", stopZoom, { passive: false });
+  document.addEventListener("gesturechange", stopZoom, { passive: false });
+})();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="YRoom"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#fafafa"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<link rel="apple-touch-icon" href="./icons/y-180.png?v=3"/>
+<link rel="icon" type="image/png" href="./icons/y-180.png?v=3"/>
+<title>YRoom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./app.css?v=10"/>
+<script src="./config.js?v=1788225932"></script>
+<script>
+(function () {
+  var opened = "";
+  try { opened = sessionStorage.getItem("yroom.gateOk") || ""; } catch (e) {}
+  window.YROOM_NEED_GATE = opened !== "1";
+  document.documentElement.classList.add(window.YROOM_NEED_GATE ? "need-gate" : "gate-ok");
+  var KEY_RE = /^[A-Za-z0-9_-]{8,128}$/;
+  var stored = "";
+  try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
+  var cookie = "";
+  try {
+    var m = document.cookie.match(/(?:^|; )yroom\.viewKey=([^;]*)/);
+    cookie = m ? decodeURIComponent(m[1]) : "";
+  } catch (e) {}
+  var q = new URLSearchParams(location.search).get("k") || "";
+  var h = "";
+  try {
+    var raw = (location.hash || "").replace(/^#/, "");
+    if (raw.indexOf("k=") === 0) {
+      h = decodeURIComponent((raw.slice(2).split("&")[0] || "").replace(/\+/g, " "));
+    } else {
+      h = new URLSearchParams(raw).get("k") || "";
+    }
+  } catch (e) {}
+  var fromUrl = KEY_RE.test(q) ? q : KEY_RE.test(h) ? h : "";
+  var token = fromUrl || (KEY_RE.test(stored) ? stored : "") || (KEY_RE.test(cookie) ? cookie : "");
+  window.YROOM_URL_KEY = fromUrl;
+  window.YROOM_VIEW_KEY = token;
+  if (token) {
+    try { localStorage.setItem("yroom.viewKey", token); } catch (e) {}
+    if (!/iPhone|iPod/.test(navigator.userAgent || "") && typeof navigator.standalone === "boolean" && !navigator.standalone) {
+      var pin = location.pathname + "?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token);
+      if (location.pathname + location.search + location.hash !== pin) {
+        history.replaceState({}, "", pin);
+      }
+    }
+  }
+  var origin = window.VAULT_ORIGIN;
+  if (origin) {
+    var link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = origin;
+    link.crossOrigin = "anonymous";
+    document.head.appendChild(link);
+  }
+})();
 </script>
 </head>
-<body></body>
+<body>
+<div class="blobs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+<div class="hall with-feed is-invite" id="hall">
+  <div class="profile">
+    <div class="subway-y" id="subway-y" aria-hidden="true">
+      <svg viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r="40" fill="#fccc0a"/>
+        <path d="M28 22 L44 54 L60 22" fill="none" stroke="#111" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M44 50 L44 70" fill="none" stroke="#111" stroke-width="10" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="brand">YRoom</h1>
+    <p class="status" id="status"></p>
+    <div class="invite-panel" id="invite-panel">
+      <p class="invite-hey" id="invite-hey">安靜的讀本書吧!</p>
+      <p class="invite-safari" id="invite-safari" hidden>請用 Safari 打開</p>
+      <div class="gate-dots" id="gate-dots" aria-hidden="true"></div>
+      <div class="gate-pad" id="gate-pad" role="group" aria-label="數字門">
+        <button type="button" class="gate-key" data-num="1">1</button>
+        <button type="button" class="gate-key" data-num="2">2</button>
+        <button type="button" class="gate-key" data-num="3">3</button>
+        <button type="button" class="gate-key" data-num="4">4</button>
+        <button type="button" class="gate-key" data-num="5">5</button>
+        <button type="button" class="gate-key" data-num="6">6</button>
+        <button type="button" class="gate-key" data-num="7">7</button>
+        <button type="button" class="gate-key" data-num="8">8</button>
+        <button type="button" class="gate-key" data-num="9">9</button>
+        <span class="gate-skip" aria-hidden="true"></span>
+        <button type="button" class="gate-key" data-num="0">0</button>
+        <button type="button" class="gate-key gate-del" data-del="1" aria-label="刪除">⌫</button>
+      </div>
+    </div>
+    <div class="invite-wait" id="invite-wait" hidden>
+      <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="invite-wait-bar"></div>
+    </div>
+  </div>
+  <div class="stage-bg" id="stage-bg" hidden></div>
+  <div class="home-head" id="home-head" hidden>
+    <div class="cab-hud" id="cab-hud" hidden>
+      <div class="cab-wrap">
+        <div class="cab-cover">
+          <div class="cab-ring" aria-hidden="true"></div>
+          <div class="cab-face"><img id="face-img" alt="" src="./face-default.jpg?v=2"/><span class="cab-foil" aria-hidden="true"></span></div>
+          <div class="cab-mask" aria-hidden="true"></div>
+        </div>
+        <div id="album-settings" class="album-settings">
+          <button type="button" class="ins-icon settings-toggle" id="settingsToggle" aria-label="設定" aria-expanded="false">
+            <span class="ins-ring"></span>
+            <span class="ins-face">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3.8l.6-1.3h3.6l.6 1.3 1.6.7 1.4-.5 2.5 2.5-.5 1.4.7 1.6 1.3.6v3.6l-1.3.6-.7 1.6.5 1.4-2.5 2.5-1.4-.5-1.6.7-.6 1.3h-3.6l-.6-1.3-1.6-.7-1.4.5-2.5-2.5.5-1.4-.7-1.6-1.3-.6v-3.6l1.3-.6.7-1.6-.5-1.4L6.6 4l1.4.5 1.6-.7z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><circle cx="12" cy="11.9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </span>
+          </button>
+          <div class="settings-menu" id="settingsMenu" hidden role="menu">
+            <button type="button" class="settings-entry" data-job="cover" role="menuitem">
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l1.4-2.4h5.2L16 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.6" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></span></span>
+              <span>更換頭像</span>
+            </button>
+            <button type="button" class="settings-entry" data-job="backdrop" role="menuitem">
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 16.2l4.2-4.6 3 3.2 2.2-2.4 3.6 3.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="9" cy="9.2" r="1.3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span></span>
+              <span>更換背景</span>
+            </button>
+            <button type="button" class="settings-entry" data-job="private" role="menuitem">
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 8h5M9.5 12h5M9.5 16h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></span>
+              <span>擷取私藏</span>
+            </button>
+            <button type="button" class="settings-entry" data-job="jobs" role="menuitem">
+              <span class="ins-icon job-icon" aria-hidden="true"><span class="ins-ring"></span><span class="ins-face"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="12" height="15" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 4.5h6v2.2H9z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 11h6M9 14.5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></span>
+              <span>工作佇列</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="reader-name" id="reader-name">館主</p>
+    </div>
+    <div class="tag-board" id="tag-board">
+      <div class="mode-bar" id="mode-bar">
+        <button type="button" class="mode-btn" data-mode="fav" id="modeFav">最愛</button>
+        <button type="button" class="mode-btn is-on" data-mode="manga" id="modeBooks">書籍</button>
+      </div>
+    </div>
+  </div>
+  <div class="feed" id="feed"></div>
+</div>
+<aside class="photo-rail" id="photo-rail" hidden aria-label="書櫃操作"></aside>
+<input id="cover-input" type="file" accept="image/*" hidden/>
+<input id="backdrop-input" type="file" accept="image/*" hidden/>
+<div class="settings-catch" id="settingsCatch" hidden></div>
+<div class="batch-tag-mask" id="waitMask" hidden>
+  <div class="batch-tag-sheet is-wait" id="waitSheet">
+    <div class="batch-tag-head">
+      <p id="waitTitle">更換背景中</p>
+    </div>
+    <p class="wait-pct" id="waitPct">0%</p>
+    <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+</div>
+<div class="batch-tag-mask" id="actMask" hidden>
+  <div class="batch-tag-sheet" id="actSheet">
+    <div class="batch-tag-head">
+      <p id="actTitle">擷取私藏</p>
+      <button type="button" class="batch-tag-close" id="actClose" aria-label="關閉">×</button>
+    </div>
+    <div id="actBody">
+      <p>重掃全部收藏。已齊的本會跳過，只補缺頁與壞頁。</p>
+      <button type="button" class="tag-apply" id="actGo">
+        <span class="tag-apply-face">確認</span>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="home-install" id="home-install" hidden>
+  <p>請點底部分享，再選加入主畫面</p>
+  <button type="button" class="invite-go" id="home-installed">我已加入</button>
+</div>
+<div id="reader-layer" hidden>
+  <div id="reader-bridge">
+    <img id="reader-bridge-cover" alt="" hidden/>
+    <div id="reader-hint" hidden>
+      <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <p class="read-wait">讀取中</p>
+    </div>
+  </div>
+  <button type="button" class="ins-icon nav-back" id="reader-back" aria-label="返回書櫃">
+    <span class="ins-ring"></span>
+    <span class="ins-face">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+  </button>
+  <iframe id="reader-frame" title="閱讀器" src="about:blank"></iframe>
+</div>
+<div class="batch-tag-mask" id="jobsMask" hidden>
+  <div class="batch-tag-sheet" id="jobsSheet">
+    <div class="batch-tag-head">
+      <p>工作佇列</p>
+      <button type="button" class="batch-tag-close" id="jobsClose" aria-label="關閉">×</button>
+    </div>
+    <div id="jobsBody"></div>
+  </div>
+</div>
+<script src="./gate.js?v=6"></script>
+<script src="./hey.js?v=5"></script>
+<script src="./app.js?v=9"></script>
+</body>
 </html>

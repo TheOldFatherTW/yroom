@@ -97,12 +97,9 @@
     document.documentElement.classList.remove("need-gate");
     document.documentElement.classList.add("gate-ok");
     startWait();
-    if (window.YRoomGate.pinKey) window.YRoomGate.pinKey(token);
     if (window.YRoomShelf && window.YRoomShelf.enterAfterGate) {
       window.YRoomShelf.enterAfterGate(token);
-      return;
     }
-    location.replace("./index.html?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token));
   }
 
   function submit() {
