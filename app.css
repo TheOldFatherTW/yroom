@@ -214,6 +214,73 @@ button.apple-next {
 button.apple-next svg { width: 36px; height: 36px; display: block; }
 button.apple-next circle { fill: currentColor; }
 button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; }
+.gate-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0 8px;
+  min-height: 14px;
+}
+.gate-dots[hidden] {
+  display: none !important;
+}
+.gate-dots span {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: transparent;
+}
+.gate-dots span.is-on {
+  background: var(--ink);
+}
+.gate-dots.is-bad {
+  animation: gate-shake 0.4s ease;
+}
+@keyframes gate-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-7px); }
+  80% { transform: translateX(7px); }
+}
+.gate-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 18px;
+  width: min(280px, 88vw);
+  margin: 22px auto 0;
+  justify-items: center;
+}
+.gate-pad[hidden] {
+  display: none !important;
+}
+.gate-pad.is-off {
+  pointer-events: none;
+  opacity: 0.38;
+}
+.gate-key {
+  width: clamp(56px, 17vw, 72px);
+  height: clamp(56px, 17vw, 72px);
+  border-radius: 50%;
+  background: rgba(38, 38, 38, 0.08);
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1;
+}
+.gate-key:active {
+  background: rgba(38, 38, 38, 0.18);
+}
+.gate-del {
+  font-size: 20px;
+  background: transparent;
+}
+.gate-skip {
+  width: clamp(56px, 17vw, 72px);
+  height: clamp(56px, 17vw, 72px);
+}
 .invite-wait { margin-top: 28px; color: var(--accent); }
 .thinking-five {
   display: flex;

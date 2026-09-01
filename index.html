@@ -46,10 +46,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=7"/>
+<link rel="stylesheet" href="./app.css?v=8"/>
 <script src="./config.js?v=1788225932"></script>
 <script>
 (function () {
+  var opened = "";
+  try { opened = sessionStorage.getItem("yroom.gateOk") || ""; } catch (e) {}
+  if (opened !== "1") {
+    location.replace("./hey.html");
+    return;
+  }
   var KEY_RE = /^[A-Za-z0-9_-]{8,128}$/;
   var stored = "";
   try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
@@ -213,7 +219,7 @@
     <div id="jobsBody"></div>
   </div>
 </div>
-<script src="./gate.js?v=4"></script>
-<script src="./app.js?v=6"></script>
+<script src="./gate.js?v=5"></script>
+<script src="./app.js?v=7"></script>
 </body>
 </html>

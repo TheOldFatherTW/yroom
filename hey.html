@@ -21,13 +21,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=7"/>
+<link rel="stylesheet" href="./app.css?v=8"/>
 <script src="./config.js?v=1788225932"></script>
 <script>
 (function () {
-  var q = new URLSearchParams(location.search).get("k") || "";
-  window.YROOM_FORCE_INVITE = true;
-  window.YROOM_URL_KEY = /^[A-Za-z0-9_-]{8,128}$/.test(q) ? q : "";
+  window.YROOM_URL_KEY = "";
   window.YROOM_VIEW_KEY = "";
   var origin = window.VAULT_ORIGIN;
   if (origin) {
@@ -57,14 +55,28 @@
   <div class="invite-panel" id="invite-panel">
     <p class="invite-hey" id="invite-hey">安靜的讀本書吧!</p>
     <p class="invite-safari" id="invite-safari" hidden>請用 Safari 打開</p>
-    <button type="button" class="invite-go" id="invite-go">開始</button>
+    <div class="gate-dots" id="gate-dots" aria-hidden="true"></div>
+    <div class="gate-pad" id="gate-pad" role="group" aria-label="數字門">
+      <button type="button" class="gate-key" data-num="1">1</button>
+      <button type="button" class="gate-key" data-num="2">2</button>
+      <button type="button" class="gate-key" data-num="3">3</button>
+      <button type="button" class="gate-key" data-num="4">4</button>
+      <button type="button" class="gate-key" data-num="5">5</button>
+      <button type="button" class="gate-key" data-num="6">6</button>
+      <button type="button" class="gate-key" data-num="7">7</button>
+      <button type="button" class="gate-key" data-num="8">8</button>
+      <button type="button" class="gate-key" data-num="9">9</button>
+      <span class="gate-skip" aria-hidden="true"></span>
+      <button type="button" class="gate-key" data-num="0">0</button>
+      <button type="button" class="gate-key gate-del" data-del="1" aria-label="刪除">⌫</button>
+    </div>
     <div class="invite-wait" id="invite-wait" hidden>
       <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
       <div class="invite-wait-bar" id="invite-wait-bar"></div>
     </div>
   </div>
 </div>
-<script src="./gate.js?v=2"></script>
-<script src="./hey.js?v=2"></script>
+<script src="./gate.js?v=5"></script>
+<script src="./hey.js?v=3"></script>
 </body>
 </html>

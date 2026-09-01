@@ -875,8 +875,8 @@
   }
 
   function afterDoor(door) {
-    if (door && door.kind === "invite") {
-      location.href = "./hey.html?k=" + encodeURIComponent(KEY);
+    if (door && door.kind !== "album") {
+      location.replace("./hey.html");
       return;
     }
     if (window.YRoomGate) {
@@ -924,7 +924,7 @@
   function boot() {
     KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || KEY;
     if (!KEY) {
-      failGate("請用入口連結打開");
+      location.replace("./hey.html");
       return;
     }
     var ask = window.YRoomGate
