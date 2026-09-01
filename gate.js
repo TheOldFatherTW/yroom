@@ -179,11 +179,16 @@
   }
 
   function refreshOrigin() {
+    var prev = String(window.VAULT_ORIGIN || "").replace(/\/$/, "");
     return fetch("./config.js?v=" + Date.now(), { cache: "no-store" })
       .then(function (r) { return r.text(); })
       .then(function (text) {
         var m = text.match(/VAULT_ORIGIN\s*=\s*["']([^"']*)["']/);
-        if (m) window.VAULT_ORIGIN = m[1];
+        var next = m ? String(m[1] || "").replace(/\/$/, "") : "";
+        if (!next || next === prev) return;
+        return fetch(next + "/api/public", { cache: "no-store" }).then(function (res) {
+          if (res && res.ok) window.VAULT_ORIGIN = next;
+        });
       })
       .catch(function () {});
   }

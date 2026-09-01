@@ -887,14 +887,13 @@
     }
     var wait = document.getElementById("invite-wait") || document.getElementById("boot-wait");
     if (wait) wait.hidden = false;
-    boot();
+    askDoor({ stay: true });
   }
 
   function afterDoor(door) {
     if (door && door.kind !== "album") {
-      dropBadKey();
-      if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
-      else failGate("請從數字門進入");
+      failGate();
+      scheduleReconnect();
       return;
     }
     if (window.YRoomGate) {
@@ -951,12 +950,13 @@
     } catch (e) {}
   }
 
-  function askDoor() {
+  function askDoor(opts) {
+    var stay = !!(opts && opts.stay);
     var stored = "";
     try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
     KEY = KEY || window.YROOM_VIEW_KEY || stored || (window.YRoomGate && window.YRoomGate.currentKey()) || "";
     if (!KEY) {
-      if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
+      if (!stay && window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
       else failGate("請從數字門進入");
       return;
     }
@@ -968,11 +968,12 @@
         var fallback = window.YROOM_VIEW_KEY || stored;
         if (fallback && fallback !== KEY) {
           KEY = fallback;
-          askDoor();
+          askDoor(opts);
           return;
         }
-        if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
-        else failGate("請從數字門進入");
+        if (!stay && window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
+        else failGate();
+        scheduleReconnect();
         return;
       }
       if (!x || !x.j || (x.res && !x.res.ok)) {
