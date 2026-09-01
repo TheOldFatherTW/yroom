@@ -109,7 +109,34 @@ html, body {
 }
 .hall.is-invite, .hall.is-booting {
   min-height: 100vh;
+  min-height: 100dvh;
+}
+.hall.is-booting {
   justify-content: center;
+}
+.hall.is-invite {
+  --gate-key: 75px;
+  --gate-gap-x: 27px;
+  --gate-gap-y: 16px;
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden;
+}
+@media (max-height: 700px) {
+  .hall.is-invite {
+    --gate-key: 64px;
+    --gate-gap-x: 22px;
+    --gate-gap-y: 12px;
+  }
+  .hall.is-invite .profile {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 6dvh);
+  }
+  .hall.is-invite .gate-pad {
+    margin-top: 3.5dvh;
+  }
+  .hall.is-invite .gate-key {
+    font-size: 28px;
+  }
 }
 .hall.is-invite .home-head,
 .hall.is-invite .local-cabs,
@@ -130,6 +157,32 @@ html, body {
   margin: 0 auto 12px;
   color: #fccc0a;
 }
+.hall.is-invite .profile {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 14dvh);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+.hall.is-invite .subway-y {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 4px;
+}
+.hall.is-invite h1.brand {
+  font-size: 22px;
+}
+.hall.is-invite .status {
+  margin: 0;
+  min-height: 0;
+}
+.hall.is-invite .status:empty {
+  display: none;
+}
 .subway-y svg { width: 100%; height: 100%; display: block; }
 h1.brand {
   margin: 0;
@@ -149,8 +202,9 @@ h1.brand {
 }
 html.need-gate #invite-wait { display: none !important; }
 html.gate-ok #invite-panel { display: none !important; }
-.invite-panel { width: min(420px, 92vw); margin: 4px auto 0; text-align: center; }
-.invite-hey { margin: 18px 0 0; font-size: clamp(18px, 5.4vw, 22px); font-weight: 600; }
+.invite-panel { width: min(420px, 92vw); margin: 0 auto; text-align: center; }
+.invite-hey { margin: 6px 0 0; font-size: clamp(17px, 4.6vw, 22px); font-weight: 600; }
+.hall.is-invite .invite-hey { margin-top: 6px; }
 .invite-safari[hidden] { display: none !important; }
 .invite-safari {
   margin: 20px 0 0;
@@ -220,9 +274,9 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin: 28px 0 8px;
-  min-height: 14px;
+  gap: 8px;
+  margin: 16px 0 0;
+  min-height: 13px;
 }
 .gate-dots[hidden] {
   display: none !important;
@@ -249,10 +303,10 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
 }
 .gate-pad {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px 18px;
-  width: min(280px, 88vw);
-  margin: 22px auto 0;
+  grid-template-columns: repeat(3, var(--gate-key, 75px));
+  gap: var(--gate-gap-y, 16px) var(--gate-gap-x, 27px);
+  width: calc(3 * var(--gate-key, 75px) + 2 * var(--gate-gap-x, 27px));
+  margin: 5.5dvh auto 0;
   justify-items: center;
 }
 .gate-pad[hidden] {
@@ -263,13 +317,13 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
   opacity: 0.38;
 }
 .gate-key {
-  width: clamp(56px, 17vw, 72px);
-  height: clamp(56px, 17vw, 72px);
+  width: var(--gate-key, 75px);
+  height: var(--gate-key, 75px);
   border-radius: 50%;
   background: rgba(38, 38, 38, 0.08);
   color: var(--ink);
-  font-size: 26px;
-  font-weight: 500;
+  font-size: 32px;
+  font-weight: 400;
   line-height: 1;
 }
 .gate-key:active {
@@ -280,8 +334,8 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
   background: transparent;
 }
 .gate-skip {
-  width: clamp(56px, 17vw, 72px);
-  height: clamp(56px, 17vw, 72px);
+  width: var(--gate-key, 75px);
+  height: var(--gate-key, 75px);
 }
 .invite-wait { margin-top: 28px; color: var(--accent); }
 .thinking-five {
