@@ -6,7 +6,7 @@
   var padEl = document.getElementById("gate-pad");
   var LOCK_STORE = "yroom.gateLock";
   var typed = "";
-  var need = 9;
+  var need = 6;
   var busy = false;
   var lockedUntil = 0;
   var lockTimer = 0;
