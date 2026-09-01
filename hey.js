@@ -85,7 +85,7 @@
     if (retryTimer) return;
     retryTimer = setTimeout(function () {
       retryTimer = 0;
-      window.YRoomGate.refreshOrigin().then(bootPublic);
+      window.YRoomGate.refreshOrigin().then(probePublic);
     }, 12000);
   }
 
@@ -102,9 +102,10 @@
     }
   }
 
-  function submit() {
-    if (busy || lockLeft() > 0) return;
+  function submit(isRetry) {
+    if (lockLeft() > 0) return;
     if (typed.length !== need) return;
+    if (busy && !isRetry) return;
     busy = true;
     paintLock();
     window.YRoomGate.api("/api/gate", "", {
@@ -133,12 +134,20 @@
         paintLock();
         return;
       }
+      if (!isRetry) {
+        window.YRoomGate.refreshOrigin().then(function () { submit(true); });
+        return;
+      }
       if (statusEl) statusEl.textContent = "維護中,請5分鐘後再試";
       scheduleReconnect();
       clearTyped();
       busy = false;
       paintLock();
     }).catch(function () {
+      if (!isRetry) {
+        window.YRoomGate.refreshOrigin().then(function () { submit(true); });
+        return;
+      }
       if (statusEl) statusEl.textContent = "維護中,請5分鐘後再試";
       scheduleReconnect();
       clearTyped();
@@ -163,18 +172,55 @@
     paintDots();
   }
 
-  function bootPublic() {
+  function probePublic() {
     if (!window.YRoomGate.origin() && location.protocol === "https:") {
       if (statusEl) statusEl.textContent = "維護中,請5分鐘後再試";
       scheduleReconnect();
+      return;
     }
     window.YRoomGate.api("/api/public", "", { timeout: 8000 }).then(function (x) {
       var n = x && x.j && Number(x.j.gate_len);
       if (n >= 4 && n <= 16) need = n;
+      if (statusEl && statusEl.textContent.indexOf("維護") >= 0) statusEl.textContent = "";
       paintDots();
     }).catch(function () {
       paintDots();
     });
+  }
+
+  function openGate() {
+    window.YROOM_NEED_GATE = true;
+    try { sessionStorage.removeItem("yroom.gateOk"); } catch (e) {}
+    document.documentElement.classList.add("need-gate");
+    document.documentElement.classList.remove("gate-ok");
+    var hall = document.getElementById("hall");
+    if (hall) {
+      hall.classList.remove("is-booting", "is-ready");
+      hall.classList.add("is-invite");
+    }
+    var panel = document.getElementById("invite-panel");
+    if (panel) panel.hidden = false;
+    if (padEl) padEl.hidden = false;
+    if (dotsEl) dotsEl.hidden = false;
+    if (waitEl) waitEl.hidden = true;
+    var profile = document.querySelector(".profile");
+    if (profile) profile.hidden = false;
+    var home = document.getElementById("home-head");
+    if (home) home.hidden = true;
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = "";
+    }
+    restoreLock();
+    paintDots();
+    paintLock();
+    if (window.YRoomGate.needsSafari()) {
+      if (safariNote) safariNote.hidden = false;
+      if (padEl) padEl.hidden = true;
+      if (dotsEl) dotsEl.hidden = true;
+      return;
+    }
+    window.YRoomGate.refreshOrigin().then(probePublic);
   }
 
   function boot() {
@@ -190,7 +236,7 @@
       if (dotsEl) dotsEl.hidden = true;
       return;
     }
-    bootPublic();
+    window.YRoomGate.refreshOrigin().then(probePublic);
   }
 
   if (padEl) {
@@ -216,5 +262,6 @@
     }
   });
 
+  window.YRoomDoor = { open: openGate };
   boot();
 })();

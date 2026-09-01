@@ -892,7 +892,9 @@
 
   function afterDoor(door) {
     if (door && door.kind !== "album") {
-      failGate("請從數字門進入");
+      dropBadKey();
+      if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
+      else failGate("請從數字門進入");
       return;
     }
     if (window.YRoomGate) {
@@ -939,17 +941,33 @@
     });
   }
 
-  function boot() {
+  function dropBadKey() {
+    KEY = "";
+    window.YROOM_VIEW_KEY = "";
+    try { localStorage.removeItem("yroom.viewKey"); } catch (e) {}
+    try {
+      var path = location.pathname.replace(/[^/]+$/, "") || "/";
+      document.cookie = "yroom.viewKey=; path=" + path + "; max-age=0";
+    } catch (e) {}
+  }
+
+  function askDoor() {
     KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || KEY;
     if (!KEY) {
-      if (status) status.textContent = "正在連接書櫃…";
-      failGate("請從數字門進入");
+      if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
+      else failGate("請從數字門進入");
       return;
     }
     var ask = window.YRoomGate
       ? window.YRoomGate.apiRetry("/api/door", KEY, { timeout: 20000, tries: 3 })
       : get("/api/door").then(function (door) { return { res: { ok: true }, j: door }; });
     ask.then(function (x) {
+      if (x && x.res && x.res.status === 401) {
+        dropBadKey();
+        if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
+        else failGate("請從數字門進入");
+        return;
+      }
       if (!x || !x.j || (x.res && !x.res.ok)) {
         failGate();
         scheduleReconnect();
@@ -960,6 +978,14 @@
       failGate();
       scheduleReconnect();
     });
+  }
+
+  function boot() {
+    if (window.YRoomGate && window.YRoomGate.refreshOrigin) {
+      window.YRoomGate.refreshOrigin().then(askDoor);
+      return;
+    }
+    askDoor();
   }
 
   if (coverInput) coverInput.addEventListener("change", function () {
