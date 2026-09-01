@@ -94,7 +94,7 @@
     hall.classList.remove("is-booting");
     hall.classList.add("is-ready");
     if (status) status.hidden = true;
-    var wait = document.getElementById("boot-wait");
+    var wait = document.getElementById("invite-wait") || document.getElementById("boot-wait");
     if (wait) wait.hidden = true;
     var profile = document.querySelector(".profile");
     if (profile) profile.hidden = true;
@@ -874,9 +874,25 @@
     });
   }
 
+  function enterAfterGate(token) {
+    KEY = token || KEY;
+    window.YROOM_VIEW_KEY = KEY;
+    hall.classList.remove("is-invite");
+    hall.classList.add("is-booting");
+    var panel = document.getElementById("invite-panel");
+    if (panel) panel.hidden = true;
+    if (status) {
+      status.hidden = false;
+      status.textContent = "正在連接書櫃…";
+    }
+    var wait = document.getElementById("invite-wait") || document.getElementById("boot-wait");
+    if (wait) wait.hidden = false;
+    boot();
+  }
+
   function afterDoor(door) {
     if (door && door.kind !== "album") {
-      location.replace("./hey.html");
+      failGate("請從數字門進入");
       return;
     }
     if (window.YRoomGate) {
@@ -924,7 +940,8 @@
   function boot() {
     KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || KEY;
     if (!KEY) {
-      location.replace("./hey.html");
+      if (status) status.textContent = "正在連接書櫃…";
+      failGate("請從數字門進入");
       return;
     }
     var ask = window.YRoomGate
@@ -1030,7 +1047,15 @@
   window.YRoomShelf = {
     openSaved: openSaved,
     closeReader: closeReader,
+    enterAfterGate: enterAfterGate,
   };
 
-  boot();
+  if (!window.YROOM_NEED_GATE) {
+    hall.classList.remove("is-invite");
+    hall.classList.add("is-booting");
+    if (status && !status.textContent) status.textContent = "正在連接書櫃…";
+    var wait = document.getElementById("invite-wait") || document.getElementById("boot-wait");
+    if (wait) wait.hidden = false;
+    boot();
+  }
 })();

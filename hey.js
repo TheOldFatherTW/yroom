@@ -92,7 +92,17 @@
   function goHome(token) {
     try { sessionStorage.setItem("yroom.gateOk", "1"); } catch (e) {}
     window.YRoomGate.savePersonal(token);
-    location.href = "./index.html?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token);
+    window.YROOM_VIEW_KEY = token;
+    window.YROOM_NEED_GATE = false;
+    document.documentElement.classList.remove("need-gate");
+    document.documentElement.classList.add("gate-ok");
+    startWait();
+    if (window.YRoomGate.pinKey) window.YRoomGate.pinKey(token);
+    if (window.YRoomShelf && window.YRoomShelf.enterAfterGate) {
+      window.YRoomShelf.enterAfterGate(token);
+      return;
+    }
+    location.replace("./index.html?k=" + encodeURIComponent(token) + "#k=" + encodeURIComponent(token));
   }
 
   function submit() {
@@ -108,7 +118,6 @@
     }).then(function (x) {
       var j = x && x.j;
       if (j && j.ok && j.token && window.YRoomGate.KEY_RE.test(j.token)) {
-        startWait();
         goHome(j.token);
         return;
       }
@@ -174,6 +183,7 @@
   function boot() {
     window.YRoomGate.blockWebChrome();
     window.YRoomGate.bindKeyboard();
+    if (!window.YROOM_NEED_GATE) return;
     restoreLock();
     paintDots();
     paintLock();

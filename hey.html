@@ -3,80 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
-<script>
-(function () {
-  function stopZoom(ev) { ev.preventDefault(); }
-  document.addEventListener("gesturestart", stopZoom, { passive: false });
-  document.addEventListener("gesturechange", stopZoom, { passive: false });
-})();
-</script>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-title" content="YRoom"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="theme-color" content="#fafafa"/>
-<link rel="apple-touch-icon" href="./icons/y-180.png?v=3"/>
-<link rel="icon" type="image/png" href="./icons/y-180.png?v=3"/>
 <title>YRoom</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=8"/>
-<script src="./config.js?v=1788225932"></script>
 <script>
-(function () {
-  window.YROOM_URL_KEY = "";
-  window.YROOM_VIEW_KEY = "";
-  var origin = window.VAULT_ORIGIN;
-  if (origin) {
-    var link = document.createElement("link");
-    link.rel = "preconnect";
-    link.href = origin;
-    link.crossOrigin = "anonymous";
-    document.head.appendChild(link);
-  }
-})();
+location.replace("./index.html" + location.search + location.hash);
 </script>
 </head>
-<body>
-<div class="blobs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-<div class="hall with-feed is-invite" id="hall">
-  <div class="profile">
-    <div class="subway-y" id="subway-y" aria-hidden="true">
-      <svg viewBox="0 0 88 88">
-        <circle cx="44" cy="44" r="40" fill="#fccc0a"/>
-        <path d="M28 22 L44 54 L60 22" fill="none" stroke="#111" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M44 50 L44 70" fill="none" stroke="#111" stroke-width="10" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <h1 class="brand">YRoom</h1>
-    <p class="status" id="status"></p>
-  </div>
-  <div class="invite-panel" id="invite-panel">
-    <p class="invite-hey" id="invite-hey">安靜的讀本書吧!</p>
-    <p class="invite-safari" id="invite-safari" hidden>請用 Safari 打開</p>
-    <div class="gate-dots" id="gate-dots" aria-hidden="true"></div>
-    <div class="gate-pad" id="gate-pad" role="group" aria-label="數字門">
-      <button type="button" class="gate-key" data-num="1">1</button>
-      <button type="button" class="gate-key" data-num="2">2</button>
-      <button type="button" class="gate-key" data-num="3">3</button>
-      <button type="button" class="gate-key" data-num="4">4</button>
-      <button type="button" class="gate-key" data-num="5">5</button>
-      <button type="button" class="gate-key" data-num="6">6</button>
-      <button type="button" class="gate-key" data-num="7">7</button>
-      <button type="button" class="gate-key" data-num="8">8</button>
-      <button type="button" class="gate-key" data-num="9">9</button>
-      <span class="gate-skip" aria-hidden="true"></span>
-      <button type="button" class="gate-key" data-num="0">0</button>
-      <button type="button" class="gate-key gate-del" data-del="1" aria-label="刪除">⌫</button>
-    </div>
-    <div class="invite-wait" id="invite-wait" hidden>
-      <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-      <div class="invite-wait-bar" id="invite-wait-bar"></div>
-    </div>
-  </div>
-</div>
-<script src="./gate.js?v=5"></script>
-<script src="./hey.js?v=3"></script>
-</body>
+<body></body>
 </html>

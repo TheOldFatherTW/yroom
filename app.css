@@ -147,6 +147,8 @@ h1.brand {
   font-weight: 600;
   color: var(--ink);
 }
+html.need-gate #invite-wait { display: none !important; }
+html.gate-ok #invite-panel { display: none !important; }
 .invite-panel { width: min(420px, 92vw); margin: 4px auto 0; text-align: center; }
 .invite-hey { margin: 18px 0 0; font-size: clamp(18px, 5.4vw, 22px); font-weight: 600; }
 .invite-safari[hidden] { display: none !important; }
