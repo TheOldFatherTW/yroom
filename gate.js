@@ -98,7 +98,7 @@
       cookie = m ? decodeURIComponent(m[1]) : "";
     } catch (e) {}
     var fromUrl = KEY_RE.test(q) ? q : KEY_RE.test(h) ? h : "";
-    return fromUrl || (KEY_RE.test(stored) ? stored : "") || (KEY_RE.test(cookie) ? cookie : "");
+    return (KEY_RE.test(stored) ? stored : "") || (KEY_RE.test(cookie) ? cookie : "") || fromUrl;
   }
 
   function blockWebChrome() {

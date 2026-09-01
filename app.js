@@ -952,7 +952,9 @@
   }
 
   function askDoor() {
-    KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || KEY;
+    var stored = "";
+    try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
+    KEY = KEY || window.YROOM_VIEW_KEY || stored || (window.YRoomGate && window.YRoomGate.currentKey()) || "";
     if (!KEY) {
       if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
       else failGate("請從數字門進入");
@@ -963,7 +965,12 @@
       : get("/api/door").then(function (door) { return { res: { ok: true }, j: door }; });
     ask.then(function (x) {
       if (x && x.res && x.res.status === 401) {
-        dropBadKey();
+        var fallback = window.YROOM_VIEW_KEY || stored;
+        if (fallback && fallback !== KEY) {
+          KEY = fallback;
+          askDoor();
+          return;
+        }
         if (window.YRoomDoor && window.YRoomDoor.open) window.YRoomDoor.open();
         else failGate("請從數字門進入");
         return;

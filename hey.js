@@ -13,6 +13,8 @@
   var retryTimer = 0;
 
   function startWait() {
+    var hey = document.getElementById("invite-hey");
+    if (hey) hey.hidden = true;
     if (padEl) padEl.hidden = true;
     if (dotsEl) dotsEl.hidden = true;
     if (waitEl) waitEl.hidden = false;
@@ -198,6 +200,8 @@
       hall.classList.remove("is-booting", "is-ready");
       hall.classList.add("is-invite");
     }
+    var hey = document.getElementById("invite-hey");
+    if (hey) hey.hidden = false;
     var panel = document.getElementById("invite-panel");
     if (panel) panel.hidden = false;
     if (padEl) padEl.hidden = false;
