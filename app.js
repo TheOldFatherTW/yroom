@@ -32,7 +32,14 @@
   var mode = "manga";
   var selected = new Set();
   var selectMode = false;
+  var FIRST = 12;
+  var THUMB_CAP = 6;
+  var THUMB_CACHE = "yroom-thumbs-v1";
+  var thumbGen = 0;
+  var thumbActive = 0;
+  var thumbWait = [];
   var blobUrls = [];
+  var memThumbs = {};
   var backdropUrl = "";
   var waitBusy = false;
   var waitTimer = 0;
@@ -154,37 +161,129 @@
     return withKey("/cover?book=" + encodeURIComponent(item.id || "") + extra);
   }
 
+  function thumbUrl(item) {
+    var extra = item.cover_rev ? "&r=" + encodeURIComponent(item.cover_rev) : "";
+    return withKey("/thumb?book=" + encodeURIComponent(item.id || "") + extra);
+  }
+
+  function thumbKey(item) {
+    var base = location.origin || "https://yroom.local";
+    return base + "/yroom-t/" + encodeURIComponent(item.id || "") + "/" + (item.cover_rev || 0);
+  }
+
   function revokeThumbs() {
+    thumbGen += 1;
+    if (window.thumbObserver) {
+      window.thumbObserver.disconnect();
+      window.thumbObserver = null;
+    }
+    thumbWait.length = 0;
     blobUrls.forEach(function (url) {
       try { URL.revokeObjectURL(url); } catch (e) {}
     });
     blobUrls = [];
   }
 
-  function bindThumb(img, url) {
-    function show() { img.classList.add("is-on"); }
-    fetch(url, { mode: "cors", credentials: "omit", cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) throw new Error("bad");
-        return res.blob();
-      })
-      .then(function (blob) {
-        var obj = URL.createObjectURL(blob);
-        blobUrls.push(obj);
-        img.addEventListener("load", show);
-        img.addEventListener("error", show);
-        img.src = obj;
-      })
-      .catch(function () {
-        img.addEventListener("load", show);
-        img.addEventListener("error", show);
-        img.src = url;
+  function pumpThumbs() {
+    while (thumbActive < THUMB_CAP && thumbWait.length) {
+      var job = thumbWait.shift();
+      thumbActive += 1;
+      job(function () {
+        thumbActive -= 1;
+        pumpThumbs();
       });
+    }
   }
 
-  function watchThumb(img, url, eager) {
-    if (eager || !window.IntersectionObserver) {
-      bindThumb(img, url);
+  function readCachedThumb(cacheKey) {
+    if (!window.caches) return Promise.resolve(null);
+    return caches.open(THUMB_CACHE).then(function (cache) {
+      return cache.match(cacheKey);
+    }).then(function (res) {
+      return res ? res.blob() : null;
+    }).catch(function () {
+      return null;
+    });
+  }
+
+  function writeCachedThumb(cacheKey, blob) {
+    if (!blob || !cacheKey || !window.caches) return;
+    caches.open(THUMB_CACHE).then(function (cache) {
+      return cache.put(cacheKey, new Response(blob, { headers: { "Content-Type": blob.type || "image/jpeg" } }));
+    }).catch(function () {});
+  }
+
+  function showBlob(img, blob, onReady) {
+    var obj = URL.createObjectURL(blob);
+    blobUrls.push(obj);
+    function done() {
+      img.removeEventListener("load", onLoad);
+      img.removeEventListener("error", onErr);
+      img.classList.add("is-on");
+      if (onReady) onReady();
+    }
+    function onLoad() { done(); }
+    function onErr() { done(); }
+    img.addEventListener("load", onLoad);
+    img.addEventListener("error", onErr);
+    img.src = obj;
+  }
+
+  function bindThumb(img, url, cacheKey, gen) {
+    var mem = memThumbs[cacheKey];
+    if (mem) {
+      img.classList.add("is-ready");
+      showBlob(img, mem);
+      return;
+    }
+    readCachedThumb(cacheKey).then(function (cached) {
+      if (gen !== thumbGen) return;
+      if (cached) {
+        memThumbs[cacheKey] = cached;
+        if (!img.isConnected) return;
+        img.classList.add("is-ready");
+        showBlob(img, cached);
+        return;
+      }
+      function start(done) {
+        fetch(url, { mode: "cors", credentials: "omit" })
+          .then(function (res) {
+            if (!res.ok) throw new Error("bad");
+            return res.blob();
+          })
+          .then(function (blob) {
+            memThumbs[cacheKey] = blob;
+            writeCachedThumb(cacheKey, blob);
+            if (gen !== thumbGen || !img.isConnected) {
+              if (done) done();
+              return;
+            }
+            showBlob(img, blob, done);
+          })
+          .catch(function () {
+            if (gen !== thumbGen || !img.isConnected) {
+              if (done) done();
+              return;
+            }
+            img.classList.add("is-on");
+            img.src = url;
+            if (done) done();
+          });
+      }
+      thumbWait.push(start);
+      pumpThumbs();
+    });
+  }
+
+  function watchThumb(img, item, eager) {
+    var url = thumbUrl(item);
+    var cacheKey = thumbKey(item);
+    img.dataset.thumbUrl = url;
+    img.dataset.thumbKey = cacheKey;
+    if (eager || memThumbs[cacheKey] || !window.IntersectionObserver) {
+      if (img.dataset.thumbBound) return;
+      img.dataset.thumbBound = "1";
+      bindThumb(img, url, cacheKey, thumbGen);
       return;
     }
     if (!window.thumbObserver) {
@@ -195,11 +294,10 @@
           window.thumbObserver.unobserve(node);
           if (node.dataset.thumbBound) return;
           node.dataset.thumbBound = "1";
-          bindThumb(node, node.dataset.thumbUrl);
+          bindThumb(node, node.dataset.thumbUrl, node.dataset.thumbKey, thumbGen);
         });
       }, { rootMargin: "240px 0px" });
     }
-    img.dataset.thumbUrl = url;
     window.thumbObserver.observe(img);
   }
 
@@ -504,15 +602,15 @@
       catalog[item.id] = item;
       var tile = document.createElement("button");
       tile.type = "button";
-      tile.className = "tile";
+      tile.className = item.kind === "video" || item.tab === "video" ? "tile tile-film" : "tile";
       tile.setAttribute("data-id", item.id || "");
       if (item.has_cover) {
         var img = document.createElement("img");
         img.alt = "";
         img.decoding = "async";
-        if (index < 8) img.loading = "eager";
+        if (index < FIRST) img.loading = "eager";
         tile.appendChild(img);
-        watchThumb(img, coverUrl(item), index < 8);
+        watchThumb(img, item, index < FIRST);
       }
       var shield = document.createElement("span");
       shield.className = "tile-shield";

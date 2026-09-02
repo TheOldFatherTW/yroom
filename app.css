@@ -778,6 +778,7 @@ html.has-rail .feed {
   margin: 28px auto 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: start;
   gap: 2px;
   background: var(--bg);
 }
@@ -791,6 +792,9 @@ html.has-rail .feed {
   color: transparent;
   /* 多選也維持 manipulation。改 none 時 iOS 會長押變 pointercancel，再當成輕點把同一本取消。 */
   touch-action: manipulation;
+}
+.tile.tile-film {
+  aspect-ratio: 800 / 538;
 }
 .tile-heart {
   position: absolute;
