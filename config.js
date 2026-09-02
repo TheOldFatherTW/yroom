@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://diagram-gadgets-recipient-tcp.trycloudflare.com";
+window.VAULT_ORIGIN = "https://replace-pics-mae-stuart.trycloudflare.com";
