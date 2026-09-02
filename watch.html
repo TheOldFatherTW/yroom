@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<script>
+(function () {
+  function stopZoom(ev) { ev.preventDefault(); }
+  document.addEventListener("gesturestart", stopZoom, { passive: false });
+  document.addEventListener("gesturechange", stopZoom, { passive: false });
+})();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="YRoom"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#f2f2f7"/>
+<link rel="apple-touch-icon" href="./icons/y-180.png?v=3"/>
+<title>YRoom</title>
+<script src="./config.js?v=1756703820"></script>
+<script>
+(function () {
+  var KEY_RE = /^[A-Za-z0-9_-]{8,128}$/;
+  var stored = "";
+  try { stored = localStorage.getItem("yroom.viewKey") || ""; } catch (e) {}
+  var q = new URLSearchParams(location.search);
+  var k = q.get("k") || "";
+  var h = "";
+  try {
+    var raw = (location.hash || "").replace(/^#/, "");
+    h = new URLSearchParams(raw).get("k") || "";
+  } catch (e) {}
+  var token = KEY_RE.test(k) ? k : KEY_RE.test(h) ? h : (KEY_RE.test(stored) ? stored : "");
+  if (token) {
+    try { localStorage.setItem("yroom.viewKey", token); } catch (e) {}
+  }
+  window.YROOM_VIEW_KEY = token;
+  var origin = String(window.VAULT_ORIGIN || "").replace(/\/$/, "") || location.origin;
+  window.VAULT_ORIGIN = origin;
+  var embedded = false;
+  try { embedded = window.parent && window.parent !== window; } catch (e) {}
+  if (embedded) {
+    try { window.parent.postMessage({ fami: "reader-loading" }, location.origin); } catch (e) {}
+  }
+})();
+</script>
+<link rel="stylesheet" href="./app.css?v=12"/>
+<link rel="stylesheet" href="./watch.css?v=1"/>
+</head>
+<body class="famiWeb lightTheme">
+<div id="topMenu" class="navMenu">
+  <div class="navContainer">
+    <button type="button" id="backShelf" class="ins-icon nav-back" aria-label="返回">
+      <span class="ins-ring"></span>
+      <span class="ins-face">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div id="bookInfo">
+      <h2 id="bookTitle"></h2>
+    </div>
+    <div id="reader-settings" class="album-settings">
+      <button type="button" id="configButton" class="ins-icon settings-toggle" aria-label="設定" aria-expanded="false">
+        <span class="ins-ring"></span>
+        <span class="ins-face">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3.8l.6-1.3h3.6l.6 1.3 1.6.7 1.4-.5 2.5 2.5-.5 1.4.7 1.6 1.3.6v3.6l-1.3.6-.7 1.6.5 1.4-2.5 2.5-1.4-.5-1.6.7-.6 1.3h-3.6l-.6-1.3-1.6-.7-1.4.5-2.5-2.5.5-1.4-.7-1.6-1.3-.6v-3.6l1.3-.6.7-1.6-.5-1.4L6.6 4l1.4.5 1.6-.7z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><circle cx="12" cy="11.9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+      </button>
+      <div id="readerSettingsMenu" class="settings-menu" hidden role="menu">
+        <button type="button" class="settings-entry" id="backToShelf" role="menuitem">
+          <span class="ins-icon job-icon" aria-hidden="true">
+            <span class="ins-ring"></span>
+            <span class="ins-face">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </span>
+          <span>返回</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="watch-stage">
+  <video id="player" controls playsinline webkit-playsinline preload="metadata"></video>
+  <p class="watch-wait" id="watchWait">打開影片</p>
+  <button type="button" class="tag-apply" id="playBtn">
+    <span class="tag-apply-face" id="playFace">播放</span>
+  </button>
+</div>
+<div class="settings-catch" id="readerSettingsCatch" hidden></div>
+<div class="batch-tag-mask" id="endMask" hidden>
+  <div class="batch-tag-sheet" id="endSheet">
+    <p class="end-copy">這部看完了,很棒</p>
+    <button type="button" class="tag-apply" id="endAgain">
+      <span class="tag-apply-face">重新觀看</span>
+    </button>
+    <button type="button" class="ins-icon nav-back" id="endHome" aria-label="返回書櫃" title="返回書櫃">
+      <span class="ins-ring"></span>
+      <span class="ins-face">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+  </div>
+</div>
+<script src="./watch.js?v=1"></script>
+</body>
+</html>

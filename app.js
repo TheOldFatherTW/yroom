@@ -1,6 +1,8 @@
 (function () {
   var HEART =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20C10.5 18.4 7.3 15.8 5.4 11.9C4 9.1 5.2 6 8.4 6c1.8 0 3 1.1 3.6 2.2C12.6 7.1 13.8 6 15.6 6c3.2 0 4.4 3.1 3 5.9C16.7 15.8 13.5 18.4 12 20Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+  var CAMERA =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l1.4-2.4h5.2L16 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.6" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   var KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || "";
   var hall = document.getElementById("hall");
   var status = document.getElementById("status");
@@ -16,6 +18,8 @@
   var homeInstalled = document.getElementById("home-installed");
   var coverInput = document.getElementById("cover-input");
   var backdropInput = document.getElementById("backdrop-input");
+  var bookCoverInput = document.getElementById("book-cover-input");
+  var coverBusy = false;
   var stageBg = document.getElementById("stage-bg");
   var cabHud = document.getElementById("cab-hud");
   var faceImg = document.getElementById("face-img");
@@ -119,8 +123,24 @@
     }, 12000);
   }
 
+  function clock(sec) {
+    var n = Math.max(0, Math.floor(Number(sec) || 0));
+    var h = Math.floor(n / 3600);
+    var m = Math.floor((n % 3600) / 60);
+    var s = n % 60;
+    if (h) return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    return m + ":" + String(s).padStart(2, "0");
+  }
+
   function readLabel(item) {
     if (!item) return "";
+    if (item.kind === "video") {
+      if (item.finished) return "已觀看";
+      var dur = Number(item.duration) || 0;
+      var pos = Number(item.progress) || 0;
+      if (dur > 0 && pos > 0) return Math.max(1, Math.min(100, Math.round(pos / dur * 100))) + "%";
+      return "";
+    }
     if (item.finished) return "已閱讀";
     if (item.progress == null) return "";
     var pages = Number(item.page_count) || 0;
@@ -391,6 +411,20 @@
       ev.stopPropagation();
       toggleHeart();
     });
+    var cover = document.createElement("button");
+    cover.type = "button";
+    cover.className = "ins-icon rail-cover";
+    cover.setAttribute("aria-label", "換封面");
+    cover.title = "換封面";
+    cover.innerHTML = '<span class="ins-ring"></span><span class="ins-face">' + CAMERA + "</span>";
+    cover.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!bookCoverInput) return;
+      bookCoverInput.value = "";
+      bookCoverInput.click();
+    });
+    rail.appendChild(cover);
     rail.appendChild(heart);
     return rail;
   }
@@ -461,9 +495,11 @@
   function paintFeed() {
     revokeThumbs();
     feed.innerHTML = "";
-    var items = mode === "fav"
-      ? allItems.filter(function (item) { return item.favorite; })
-      : allItems;
+    var items = allItems.filter(function (item) {
+      if (mode === "fav") return item.favorite;
+      if (mode === "video") return item.kind === "video" || item.tab === "video";
+      return item.kind !== "video" && item.tab !== "video";
+    });
     items.forEach(function (item, index) {
       catalog[item.id] = item;
       var tile = document.createElement("button");
@@ -489,7 +525,8 @@
       }
       var meta = document.createElement("span");
       meta.className = "tile-ep";
-      meta.textContent = item.page_count ? item.page_count + "頁" : "";
+      if (item.kind === "video") meta.textContent = item.duration ? clock(item.duration) : "";
+      else meta.textContent = item.page_count ? item.page_count + "頁" : "";
       if (!meta.textContent) meta.hidden = true;
       tile.appendChild(meta);
       var pct = document.createElement("span");
@@ -502,7 +539,8 @@
       tile.addEventListener("click", function () {
         if (busy || selectMode) return;
         if (!item.readable) return;
-        openReader(item);
+        if (item.kind === "video") openWatch(item);
+        else openReader(item);
       });
       feed.appendChild(tile);
     });
@@ -538,6 +576,13 @@
     coverEl.style.height = Math.round(box.height) + "px";
   }
 
+  function watchingUrl(item) {
+    var q = new URLSearchParams();
+    q.set("video", item.id);
+    q.set("k", KEY);
+    return "./watch.html?" + q.toString() + "#k=" + encodeURIComponent(KEY);
+  }
+
   function readingUrl(item, extra) {
     var q = new URLSearchParams();
     q.set("book", item.id);
@@ -552,6 +597,7 @@
       sessionStorage.setItem("yroom.reading", JSON.stringify({
         book: item.id,
         k: KEY,
+        kind: item.kind || "",
         end: item.finished ? "1" : "",
         cover: cover || "",
       }));
@@ -656,6 +702,57 @@
     }).catch(function () {});
   }
 
+  function openWatch(item, opts) {
+    if (!item || !item.id) return;
+    var layer = document.getElementById("reader-layer");
+    var frame = document.getElementById("reader-frame");
+    var coverEl = document.getElementById("reader-bridge-cover");
+    var hint = document.getElementById("reader-hint");
+    var bridge = document.getElementById("reader-bridge");
+    if (!layer || !frame) {
+      location.replace(watchingUrl(item));
+      return;
+    }
+    var cover = (opts && opts.cover) || tileCover(item);
+    if (!cover && item.has_cover) cover = coverUrl(item);
+    if (coverEl) {
+      if (cover) {
+        coverEl.hidden = false;
+        coverEl.src = cover;
+        sizeBridgeCover(coverEl, item);
+      } else {
+        coverEl.removeAttribute("src");
+        coverEl.hidden = true;
+      }
+    }
+    if (bridge) bridge.classList.toggle("has-cover", !!cover);
+    window.clearTimeout(hintTimer);
+    if (hint) {
+      hint.hidden = false;
+      var wait = hint.querySelector(".read-wait");
+      if (wait) wait.textContent = "打開影片";
+    }
+    rememberReading(item, cover);
+    document.documentElement.classList.add("is-reading");
+    layer.hidden = false;
+    layer.classList.remove("is-live");
+    var wasOpen = readerOpen;
+    readerOpen = true;
+    if (!wasOpen) padOverlay();
+    var url = watchingUrl(item);
+    try {
+      if (frame.getAttribute("src") === url && frame.contentWindow) {
+        frame.contentWindow.location.replace(url);
+      } else {
+        frame.src = url;
+      }
+    } catch (e) {
+      frame.src = url;
+    }
+    window.clearTimeout(readerReadyTimer);
+    readerReadyTimer = window.setTimeout(showReaderLive, 15000);
+  }
+
   function openReader(item, opts) {
     if (!item || !item.id) return;
     var layer = document.getElementById("reader-layer");
@@ -683,7 +780,11 @@
     }
     if (bridge) bridge.classList.toggle("has-cover", !!cover);
     window.clearTimeout(hintTimer);
-    if (hint) hint.hidden = false;
+    if (hint) {
+      hint.hidden = false;
+      var wait = hint.querySelector(".read-wait");
+      if (wait) wait.textContent = "讀取中";
+    }
     rememberReading(item, cover);
     document.documentElement.classList.add("is-reading");
     layer.hidden = false;
@@ -708,15 +809,18 @@
 
   function openSaved(data) {
     if (!data || !data.book) return;
-    openReader({
+    var item = {
       id: data.book,
+      kind: data.kind || (String(data.book).indexOf("video/") === 0 ? "video" : ""),
       finished: data.end === "1",
       has_cover: !!data.cover,
-    }, { end: data.end, cover: data.cover });
+    };
+    if (item.kind === "video") openWatch(item, { cover: data.cover });
+    else openReader(item, { end: data.end, cover: data.cover });
   }
 
   function pickMode(next) {
-    mode = next === "fav" ? "fav" : "manga";
+    mode = next === "fav" ? "fav" : (next === "video" ? "video" : "manga");
     document.querySelectorAll("#mode-bar .mode-btn").forEach(function (el) {
       el.classList.toggle("is-on", el.dataset.mode === mode);
     });
@@ -917,9 +1021,9 @@
         }
       }
       if (gate) {
-        return gate.apiRetry("/api/shelf?limit=200", KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; });
+        return gate.apiRetry("/api/shelf?limit=400", KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; });
       }
-      return get("/api/shelf?limit=200");
+      return get("/api/shelf?limit=400");
     }).then(function (data) {
       if (!data) return;
       allItems = data.items || [];
@@ -994,6 +1098,48 @@
       return;
     }
     askDoor();
+  }
+
+  if (bookCoverInput) {
+    bookCoverInput.addEventListener("change", function () {
+      var file = bookCoverInput.files && bookCoverInput.files[0];
+      bookCoverInput.value = "";
+      if (!file || coverBusy) return;
+      var ids = Array.from(selected);
+      if (!ids.length) return;
+      coverBusy = true;
+      showWaitCard("更換封面中");
+      waitTimer = window.setInterval(tickWait, 280);
+      var btn = document.querySelector(".rail-cover");
+      if (btn) btn.classList.add("is-run");
+      var chain = Promise.resolve();
+      ids.forEach(function (id) {
+        chain = chain.then(function () {
+          var fd = new FormData();
+          fd.append("cover", file, file.name || "cover.jpg");
+          return postFile(
+            vault() + "/api/host/cover?k=" + encodeURIComponent(KEY) + "&book=" + encodeURIComponent(id),
+            fd,
+            setWaitPct
+          );
+        });
+      });
+      chain.then(function () {
+        setWaitPct(100);
+        return get("/api/shelf?limit=400");
+      }).then(function (data) {
+        if (data) {
+          allItems = data.items || [];
+          catalog = {};
+          allItems.forEach(function (item) { catalog[item.id] = item; });
+          paintFeed();
+        }
+      }).finally(function () {
+        hideWaitCard();
+        coverBusy = false;
+        if (btn) btn.classList.remove("is-run");
+      });
+    });
   }
 
   if (coverInput) coverInput.addEventListener("change", function () {
