@@ -710,6 +710,7 @@
     var q = new URLSearchParams();
     q.set("video", item.id);
     q.set("k", KEY);
+    q.set("wv", "4");
     return "./watch.html?" + q.toString() + "#k=" + encodeURIComponent(KEY);
   }
 
