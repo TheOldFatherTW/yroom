@@ -610,6 +610,9 @@
       if (mode === "video") return item.kind === "video" || item.tab === "video";
       return item.kind !== "video" && item.tab !== "video";
     });
+    items = items.filter(function (item) { return item.favorite; }).concat(
+      items.filter(function (item) { return !item.favorite; })
+    );
     items.forEach(function (item, index) {
       catalog[item.id] = item;
       var tile = document.createElement("button");
