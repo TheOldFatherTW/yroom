@@ -493,13 +493,30 @@
       el.classList.toggle("is-pick", selected.has(el.dataset.id));
     });
     showRail(selectMode && selected.size > 0);
+    if (selectMode && selected.size > 0) paintRailHeart();
     document.documentElement.classList.toggle("is-select", selectMode);
+  }
+
+  function paintRailHeart() {
+    var rail = document.getElementById("photo-rail");
+    var heart = rail && rail.querySelector(".rail-heart");
+    if (!heart) return;
+    var ids = Array.from(selected);
+    var loved = ids.length > 0 && ids.every(function (id) {
+      return catalog[id] && catalog[id].favorite;
+    });
+    heart.classList.toggle("is-on", loved);
   }
 
   function showRail(on) {
     var rail = document.getElementById("photo-rail");
     if (rail) rail.hidden = !on;
     document.documentElement.classList.toggle("has-rail", !!on);
+    if (on) paintRailHeart();
+    else if (rail) {
+      var heart = rail.querySelector(".rail-heart");
+      if (heart) heart.classList.remove("is-on");
+    }
   }
 
   function ensureRail() {
