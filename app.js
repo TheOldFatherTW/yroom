@@ -1,5 +1,7 @@
 (function () {
   var HEART =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20C10.5 18.4 7.3 15.8 5.4 11.9C4 9.1 5.2 6 8.4 6c1.8 0 3 1.1 3.6 2.2C12.6 7.1 13.8 6 15.6 6c3.2 0 4.4 3.1 3 5.9C16.7 15.8 13.5 18.4 12 20Z"/></svg>';
+  var HEART_RAIL =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20C10.5 18.4 7.3 15.8 5.4 11.9C4 9.1 5.2 6 8.4 6c1.8 0 3 1.1 3.6 2.2C12.6 7.1 13.8 6 15.6 6c3.2 0 4.4 3.1 3 5.9C16.7 15.8 13.5 18.4 12 20Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
   var CAMERA =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l1.4-2.4h5.2L16 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.6" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
@@ -467,6 +469,12 @@
     });
   }
 
+  function clearSelect() {
+    selected = new Set();
+    selectMode = false;
+    paintPicks();
+  }
+
   function enterSelect(id) {
     selectMode = true;
     if (id) selected.add(id);
@@ -503,7 +511,7 @@
     heart.className = "ins-icon rail-heart";
     heart.setAttribute("aria-label", "愛心");
     heart.title = "愛心";
-    heart.innerHTML = '<span class="ins-ring"></span><span class="ins-face">' + HEART + "</span>";
+    heart.innerHTML = '<span class="ins-ring"></span><span class="ins-face">' + HEART_RAIL + "</span>";
     heart.addEventListener("click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -532,15 +540,18 @@
     if (!ids.length) return;
     var anyOff = ids.some(function (id) { return catalog[id] && !catalog[id].favorite; });
     var patch = {};
-    ids.forEach(function (id) {
-      patch[id] = anyOff;
-      if (catalog[id]) catalog[id].favorite = anyOff;
+    ids.forEach(function (id) { patch[id] = anyOff; });
+    post("/api/prefs", { favorites: patch }).then(function () {
+      return get("/api/shelf?limit=400");
+    }).then(function (data) {
+      if (data) {
+        allItems = data.items || [];
+        catalog = {};
+        allItems.forEach(function (item) { catalog[item.id] = item; });
+      }
+      clearSelect();
+      paintFeed();
     });
-    allItems.forEach(function (item) {
-      if (patch[item.id] !== undefined) item.favorite = patch[item.id];
-    });
-    paintFeed();
-    post("/api/prefs", { favorites: patch }).catch(function () {});
   }
 
   function bindTile(btn, item) {
@@ -593,6 +604,7 @@
   function paintFeed() {
     revokeThumbs();
     feed.innerHTML = "";
+    feed.classList.toggle("is-film", mode === "video");
     var items = allItems.filter(function (item) {
       if (mode === "fav") return item.favorite;
       if (mode === "video") return item.kind === "video" || item.tab === "video";
@@ -922,8 +934,7 @@
     document.querySelectorAll("#mode-bar .mode-btn").forEach(function (el) {
       el.classList.toggle("is-on", el.dataset.mode === mode);
     });
-    selected = new Set();
-    selectMode = false;
+    clearSelect();
     paintFeed();
   }
 
@@ -1230,8 +1241,9 @@
           allItems = data.items || [];
           catalog = {};
           allItems.forEach(function (item) { catalog[item.id] = item; });
-          paintFeed();
         }
+        clearSelect();
+        paintFeed();
       }).finally(function () {
         hideWaitCard();
         coverBusy = false;

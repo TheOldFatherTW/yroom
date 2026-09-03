@@ -972,6 +972,12 @@ html.has-rail .feed {
 }
 .home-install[hidden], [hidden] { display: none !important; }
 .home-install p { margin: 0 0 8px; font-size: clamp(18px, 5.4vw, 22px); font-weight: 600; color: var(--ink); }
+@media (max-width: 560px) and (pointer: coarse) {
+  .feed.is-film {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
 @media (max-width: 560px) {
   .ins-icon {
     width: 36px;
