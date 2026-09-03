@@ -20,6 +20,9 @@
   var mediaReady = Promise.resolve();
   var prefetchTimer = 0;
   var lastPrefetch = -1;
+  var appleTouch = /iP(hone|od|ad)/.test(navigator.userAgent || "")
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (appleTouch) document.documentElement.classList.add("is-ios");
 
   function withKey(path) {
     var u = new URL(path, origin + "/");

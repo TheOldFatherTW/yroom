@@ -51,6 +51,21 @@ body.famiWeb #bookTitle {
   background: #111;
   border-radius: 12px;
 }
+html.is-ios .watch-stage video::-webkit-media-controls-mute-button,
+html.is-ios .watch-stage video::-webkit-media-controls-volume-slider,
+html.is-ios .watch-stage video::-webkit-media-controls-volume-slider-container,
+html.is-ios .watch-stage video::-webkit-media-controls-volume-control-container,
+html.is-ios .watch-stage video::-webkit-media-controls-fullscreen-volume-slider,
+html.is-ios .watch-stage video::-webkit-media-controls-fullscreen-volume-min-button,
+html.is-ios .watch-stage video::-webkit-media-controls-fullscreen-volume-max-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 .watch-stage .tag-apply { width: min(520px, 100%); }
 .watch-wait {
   margin: 0;
