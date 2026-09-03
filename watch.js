@@ -33,10 +33,10 @@
     return withKey("/media.mp4?video=" + encodeURIComponent(videoId));
   }
   function playlistUrl() {
-    return withKey("/media.m3u8?video=" + encodeURIComponent(videoId));
+    return withKey("/media.m3u8?video=" + encodeURIComponent(videoId) + "&hv=d2");
   }
   function segmentUrl(index) {
-    return withKey("/media-seg.ts?video=" + encodeURIComponent(videoId) + "&i=" + index);
+    return withKey("/media-seg.ts?video=" + encodeURIComponent(videoId) + "&i=" + index + "&hv=d2");
   }
   function coverUrl() {
     return withKey("/cover?book=" + encodeURIComponent(videoId));
