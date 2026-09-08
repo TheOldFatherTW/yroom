@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://intro-dozen-spiritual-communications.trycloudflare.com";
+window.VAULT_ORIGIN = "https://where-alt-generated-hoped.trycloudflare.com";
