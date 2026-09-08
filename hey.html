@@ -40,13 +40,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="theme-color" content="#fafafa"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<link rel="apple-touch-icon" href="./icons/y-180.png?v=4"/>
-<link rel="icon" type="image/png" href="./icons/y-180.png?v=4"/>
+<link rel="apple-touch-icon" href="./icons/y-180.png?v=5"/>
+<link rel="icon" type="image/png" href="./icons/y-180.png?v=5"/>
 <title>YRoom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=17"/>
+<link rel="stylesheet" href="./app.css?v=18"/>
 <script src="./config.js?v=1788858978"></script>
 <script>
 (function () {
@@ -102,9 +102,16 @@
   <div class="profile">
     <div class="subway-y" id="subway-y" aria-hidden="true">
       <svg viewBox="0 0 88 88">
-        <circle cx="44" cy="44" r="40" fill="currentColor"/>
-        <path d="M28 22 L44 54 L60 22" fill="none" stroke="#111" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M44 50 L44 70" fill="none" stroke="#111" stroke-width="10" stroke-linecap="round"/>
+        <defs>
+          <radialGradient id="yr-glow" cx="56%" cy="50%" r="38%">
+            <stop offset="0%" stop-color="#ffc20e" stop-opacity="0.32"/>
+            <stop offset="100%" stop-color="#14110e" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="88" height="88" rx="20" fill="#14110e"/>
+        <rect width="88" height="88" rx="20" fill="url(#yr-glow)"/>
+        <path d="M34 26 L34 62 L66 44 Z" fill="#ffc20e" stroke="#ffc20e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+        <rect x="30" y="24" width="6.5" height="40" rx="3.25" fill="#00843d"/>
       </svg>
     </div>
     <h1 class="brand">YRoom</h1>

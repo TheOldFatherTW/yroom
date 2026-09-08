@@ -184,10 +184,6 @@ html, body {
   width: 88px;
   height: 88px;
   margin: 0 auto 12px;
-  color: var(--ring-2);
-}
-.subway-y path {
-  stroke: var(--rose);
 }
 .hall.is-invite .profile {
   width: 100%;
