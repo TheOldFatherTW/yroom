@@ -1484,3 +1484,56 @@ html.is-reading body {
   opacity: 0;
   pointer-events: none;
 }
+
+/* 排列＝講故事／MyMoney 消息列殼。不要改沒編號的格子原件。 */
+.feed.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(720px, calc(100% - 32px));
+  margin: 8px auto 48px;
+  background: transparent;
+}
+.feed.news-list .news-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 14px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.feed.news-list .news-row:active { background: #f6f6f6; }
+.feed.news-list .row-face {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.feed.news-list .news-row strong {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.feed.news-list .row-ops {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.feed.news-list .row-ops span {
+  color: var(--mute);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.feed.news-list .row-ops .ins-icon.is-loved {
+  color: var(--rose);
+}
+.feed.news-list .row-ops .ins-icon.is-loved .ins-face svg {
+  fill: currentColor;
+}

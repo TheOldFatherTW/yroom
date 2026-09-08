@@ -3,6 +3,9 @@
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20C10.5 18.4 7.3 15.8 5.4 11.9C4 9.1 5.2 6 8.4 6c1.8 0 3 1.1 3.6 2.2C12.6 7.1 13.8 6 15.6 6c3.2 0 4.4 3.1 3 5.9C16.7 15.8 13.5 18.4 12 20Z"/></svg>';
   var HEART_RAIL =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20C10.5 18.4 7.3 15.8 5.4 11.9C4 9.1 5.2 6 8.4 6c1.8 0 3 1.1 3.6 2.2C12.6 7.1 13.8 6 15.6 6c3.2 0 4.4 3.1 3 5.9C16.7 15.8 13.5 18.4 12 20Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+  var LIST = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12M6 12h12M6 17h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+  var GRID = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="5" y="13.5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="13.5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
+  var PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l12 6-12 6z" fill="currentColor"/></svg>';
   var CAMERA =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l1.4-2.4h5.2L16 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.6" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   var KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || "";
@@ -32,6 +35,10 @@
   var allItems = [];
   var catalog = {};
   var mode = "manga";
+  var listMode = false;
+  var layoutBtn = null;
+  var LAYOUT_KEY = "yroom.layout";
+  try { listMode = localStorage.getItem(LAYOUT_KEY) === "list"; } catch (e) {}
   var selected = new Set();
   var selectMode = false;
   var FIRST = 12;
@@ -618,10 +625,84 @@
     }, true);
   }
 
+  function insButton(className, svg, label) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ins-icon " + className;
+    btn.setAttribute("aria-label", label);
+    btn.title = label;
+    btn.innerHTML = '<span class="ins-ring"></span><span class="ins-face">' + svg + "</span>";
+    return btn;
+  }
+
+  function applyLayoutClass() {
+    if (feed) feed.classList.toggle("news-list", mode === "video" && !!listMode);
+    if (layoutBtn) {
+      layoutBtn.hidden = mode !== "video";
+      layoutBtn.classList.toggle("is-live", !!listMode);
+      var face = layoutBtn.querySelector(".ins-face");
+      if (face) face.innerHTML = listMode ? GRID : LIST;
+      layoutBtn.setAttribute("aria-label", listMode ? "封面格子" : "橫條排列");
+      layoutBtn.title = listMode ? "封面格子" : "橫條排列";
+    }
+    if (mode === "video" && listMode) showRail(false);
+  }
+
+  function toggleLayout() {
+    if (mode !== "video") pickMode("video");
+    listMode = !listMode;
+    try { localStorage.setItem(LAYOUT_KEY, listMode ? "list" : "grid"); } catch (e) {}
+    paintFeed();
+  }
+
+  function filmRow(item) {
+    catalog[item.id] = item;
+    var row = document.createElement("div");
+    row.className = "news-row";
+    row.dataset.id = item.id;
+    var face = document.createElement("div");
+    face.className = "row-face";
+    var title = document.createElement("strong");
+    title.textContent = item.title || "";
+    var ops = document.createElement("div");
+    ops.className = "row-ops";
+    var time = document.createElement("span");
+    time.textContent = item.duration ? clock(item.duration) : "";
+    var play = insButton("row-play", PLAY, "播放");
+    play.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (busy || selectMode) return;
+      if (!item.readable) return;
+      openWatch(item);
+    });
+    var loved = !!item.favorite;
+    var heart = insButton("row-heart" + (loved ? " is-loved" : ""), loved ? HEART : HEART_RAIL, loved ? "取消最愛" : "加入最愛");
+    heart.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      selected = new Set([item.id]);
+      toggleHeart();
+    });
+    if (time.textContent) ops.appendChild(time);
+    ops.appendChild(play);
+    ops.appendChild(heart);
+    face.appendChild(title);
+    face.appendChild(ops);
+    row.appendChild(face);
+    row.addEventListener("click", function () {
+      if (busy || selectMode) return;
+      if (!item.readable) return;
+      openWatch(item);
+    });
+    return row;
+  }
+
   function paintFeed() {
     revokeThumbs();
     feed.innerHTML = "";
     feed.classList.toggle("is-film", mode === "video");
+    applyLayoutClass();
     var items = allItems.filter(function (item) {
       if (mode === "fav") return item.favorite;
       if (mode === "video") return item.kind === "video" || item.tab === "video";
@@ -632,6 +713,10 @@
     );
     items.forEach(function (item, index) {
       catalog[item.id] = item;
+      if (mode === "video" && listMode) {
+        feed.appendChild(filmRow(item));
+        return;
+      }
       var tile = document.createElement("button");
       tile.type = "button";
       tile.className = item.kind === "video" || item.tab === "video" ? "tile tile-film" : "tile";
@@ -959,6 +1044,15 @@
     paintFeed();
   }
 
+  function ensureLayoutToggle() {
+    var bar = document.getElementById("mode-bar");
+    if (!bar || layoutBtn) return;
+    layoutBtn = insButton("layout-toggle", listMode ? GRID : LIST, listMode ? "封面格子" : "橫條排列");
+    layoutBtn.addEventListener("click", function () { toggleLayout(); });
+    bar.appendChild(layoutBtn);
+    applyLayoutClass();
+  }
+
   function placeMenu() {
     if (!gear || !menu || menu.hidden) return;
     var box = gear.getBoundingClientRect();
@@ -1100,6 +1194,7 @@
       pickMode(btn.dataset.mode);
     });
   });
+  ensureLayoutToggle();
 
   if (homeInstalled) {
     homeInstalled.addEventListener("click", function () {
