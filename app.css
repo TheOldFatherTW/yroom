@@ -1516,9 +1516,34 @@ html.is-reading body {
   display: block;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  height: 1.35em;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.35;
+  white-space: nowrap;
+}
+.feed.news-list .news-row strong.is-run {
+  display: flex;
+  align-items: center;
+}
+.feed.news-list .news-row strong span {
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.feed.news-list .news-row strong.is-run span {
+  padding-right: 2.5em;
+  animation: news-marquee var(--marquee-s, 10s) linear infinite;
+}
+@keyframes news-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed.news-list .news-row strong.is-run span {
+    animation: none;
+  }
 }
 .feed.news-list .row-ops {
   display: flex;

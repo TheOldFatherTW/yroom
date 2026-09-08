@@ -655,6 +655,54 @@
     paintFeed();
   }
 
+  function paintMarquee(host, text) {
+    if (!host) return;
+    var label = String(text || "");
+    host.setAttribute("data-marquee", label);
+    host.setAttribute("title", label);
+    armMarquee(host);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { armMarquee(host); });
+    });
+  }
+
+  function armMarquee(host) {
+    if (!host) return;
+    var label = host.getAttribute("data-marquee") || "";
+    host.classList.remove("is-run");
+    host.style.removeProperty("--marquee-s");
+    host.innerHTML = "";
+    var a = document.createElement("span");
+    a.textContent = label;
+    host.appendChild(a);
+    if (host.clientWidth > 0 && a.scrollWidth > host.clientWidth + 2) {
+      host.classList.add("is-run");
+      host.style.setProperty("--marquee-s", Math.max(8, Math.round((a.scrollWidth + 40) / 36)) + "s");
+      var b = document.createElement("span");
+      b.textContent = label;
+      b.setAttribute("aria-hidden", "true");
+      host.appendChild(b);
+    }
+  }
+
+  function refreshMarquees(root) {
+    (root || document).querySelectorAll("[data-marquee]").forEach(armMarquee);
+  }
+
+  function bindMarqueeResize() {
+    if (window.__famiMarqueeBound) return;
+    window.__famiMarqueeBound = true;
+    var t = 0;
+    function kick() {
+      window.clearTimeout(t);
+      t = window.setTimeout(function () { refreshMarquees(document); }, 80);
+    }
+    window.addEventListener("resize", kick);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", kick);
+  }
+
+  bindMarqueeResize();
+
   function filmRow(item) {
     catalog[item.id] = item;
     var row = document.createElement("div");
@@ -663,7 +711,7 @@
     var face = document.createElement("div");
     face.className = "row-face";
     var title = document.createElement("strong");
-    title.textContent = item.title || "";
+    paintMarquee(title, item.title || "");
     var ops = document.createElement("div");
     ops.className = "row-ops";
     var time = document.createElement("span");
@@ -759,6 +807,7 @@
       });
       feed.appendChild(tile);
     });
+    refreshMarquees(feed);
     paintPicks();
   }
 
