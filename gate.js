@@ -138,6 +138,11 @@
       document.documentElement.classList.toggle("kb-up", kbOn);
     }
     vv.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", function () {
+      apply();
+      setTimeout(apply, 160);
+      setTimeout(apply, 480);
+    });
     apply();
   }
 

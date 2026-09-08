@@ -44,8 +44,8 @@
   }
 })();
 </script>
-<link rel="stylesheet" href="./app.css?v=18"/>
-<link rel="stylesheet" href="./watch.css?v=2"/>
+<link rel="stylesheet" href="./app.css?v=19"/>
+<link rel="stylesheet" href="./watch.css?v=3"/>
 </head>
 <body class="famiWeb lightTheme">
 <div id="topMenu" class="navMenu">
@@ -81,7 +81,9 @@
   </div>
 </div>
 <div class="watch-stage">
-  <video id="player" controls playsinline webkit-playsinline preload="metadata" crossorigin="anonymous"></video>
+  <div class="watch-player">
+    <video id="player" controls playsinline webkit-playsinline preload="metadata" crossorigin="anonymous"></video>
+  </div>
   <p class="watch-wait" id="watchWait">打開影片</p>
   <button type="button" class="tag-apply" id="playBtn">
     <span class="tag-apply-face" id="playFace">播放</span>
@@ -102,6 +104,7 @@
     </button>
   </div>
 </div>
-<script src="./watch.js?v=6"></script>
+<script src="./gate.js?v=10"></script>
+<script src="./watch.js?v=7"></script>
 </body>
 </html>

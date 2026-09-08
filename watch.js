@@ -243,6 +243,13 @@
   if (titleEl) titleEl.textContent = "";
   if (player) player.poster = coverUrl();
 
+  function bindWatchChrome() {
+    var gate = window.YRoomGate || window.FamiGate;
+    if (gate && gate.blockWebChrome) gate.blockWebChrome();
+    if (gate && gate.bindKeyboard) gate.bindKeyboard();
+  }
+  bindWatchChrome();
+
   mediaReady = fetch(withKey("/api/video?video=" + encodeURIComponent(videoId)))
     .then(function (r) { return r.json(); })
     .then(function (info) {

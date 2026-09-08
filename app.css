@@ -1386,7 +1386,7 @@ html.is-reading,
 html.is-reading body {
   overflow: hidden;
   height: 100%;
-  height: 100dvh;
+  height: var(--vvh, 100dvh);
   overscroll-behavior: none;
 }
 #reader-layer {
