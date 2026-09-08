@@ -20,6 +20,12 @@
   var mediaReady = Promise.resolve();
   var prefetchTimer = 0;
   var lastPrefetch = -1;
+  var wanted = 0;
+  var lastSeekT = 0;
+  var userSeekAt = 0;
+  var holdUntil = 0;
+  var restoring = false;
+  var recoveries = 0;
   var appleTouch = /iP(hone|od|ad)/.test(navigator.userAgent || "")
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (appleTouch) document.documentElement.classList.add("is-ios");
@@ -66,15 +72,44 @@
     lastPrefetch = index;
     fetch(segmentUrl(index), { cache: "force-cache", mode: "cors" }).catch(function () {});
   }
+  function markWanted(sec) {
+    var n = Math.max(0, Number(sec) || 0);
+    wanted = n;
+    lastSeekT = n;
+    userSeekAt = Date.now();
+  }
+  function restoreWanted() {
+    if (!player || wanted <= 2) return;
+    restoring = true;
+    try { player.currentTime = wanted; } catch (e) {}
+    if (hls) {
+      try { hls.startLoad(wanted); } catch (e) {}
+    }
+    prefetchAt(wanted);
+    holdUntil = Date.now() + 1200;
+    setTimeout(function () { restoring = false; }, 200);
+  }
+  function isSnapBack(t) {
+    return wanted > 8 && t < 2 && (Date.now() - userSeekAt) < 4000 && Math.abs(t - lastSeekT) > 8;
+  }
+  function onUserSeek() {
+    if (!player || restoring) return;
+    var t = player.currentTime || 0;
+    if (Date.now() < holdUntil || isSnapBack(t)) {
+      restoreWanted();
+      return;
+    }
+    markWanted(t);
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(function () {
+      prefetchAt(player.currentTime);
+    }, 80);
+  }
   function bindSeekPrefetch() {
     if (!player || player.dataset.prefetchOn) return;
     player.dataset.prefetchOn = "1";
-    player.addEventListener("seeking", function () {
-      clearTimeout(prefetchTimer);
-      prefetchTimer = setTimeout(function () {
-        prefetchAt(player.currentTime);
-      }, 80);
-    });
+    player.addEventListener("seeking", onUserSeek);
+    player.addEventListener("seeked", onUserSeek);
   }
   function closeWatch() {
     try { player.pause(); } catch (e) {}
@@ -90,6 +125,8 @@
     try { window.parent.postMessage({ fami: "reader-ready" }, location.origin); } catch (e) {}
   }
   function savePos(sec, done) {
+    if (!done && (restoring || (player && player.seeking) || Date.now() < holdUntil)) return;
+    if (!done && wanted > 2 && (sec || 0) < 2) return;
     var now = Date.now();
     if (!done && now - lastSave < 4000) return;
     lastSave = now;
@@ -119,23 +156,30 @@
     });
   }
   function seekWhenReady(pos) {
-    if (!player || pos <= 2) return;
+    if (!player) return;
+    if (pos > 2) markWanted(pos);
     function go() {
-      try { player.currentTime = pos; } catch (e) {}
-      prefetchAt(pos);
+      if (wanted <= 2) return;
+      restoreWanted();
     }
     if (player.readyState >= 1) go();
     else player.addEventListener("loadedmetadata", go, { once: true });
   }
   function attachMp4() {
+    var keep = wanted > 2 ? wanted : (player && player.currentTime) || 0;
     if (hls) {
       try { hls.destroy(); } catch (e) {}
       hls = null;
     }
     player.src = mediaUrl();
     bindSeekPrefetch();
+    if (keep > 2) {
+      markWanted(keep);
+      player.addEventListener("loadedmetadata", function () { restoreWanted(); }, { once: true });
+    }
   }
   function attachHlsJs() {
+    recoveries = 0;
     return loadHls().then(function () {
       if (!window.Hls || !window.Hls.isSupported()) {
         attachMp4();
@@ -146,12 +190,28 @@
         startFragPrefetch: true,
         maxBufferLength: 8,
         maxMaxBufferLength: 16,
-        maxBufferHole: 0.5,
+        maxBufferHole: 2,
+        startPosition: wanted > 2 ? wanted : -1,
       });
+      window.__watchHls = hls;
       hls.loadSource(playlistUrl());
       hls.attachMedia(player);
+      hls.on(window.Hls.Events.MEDIA_ATTACHED, function () {
+        if (wanted > 2) {
+          try { hls.startLoad(wanted); } catch (e) {}
+        }
+      });
       hls.on(window.Hls.Events.ERROR, function (_evt, data) {
         if (!data || !data.fatal) return;
+        if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
+          try { hls.startLoad(); } catch (e) {}
+          return;
+        }
+        if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR && recoveries < 2) {
+          recoveries += 1;
+          try { hls.recoverMediaError(); } catch (e) { attachMp4(); }
+          return;
+        }
         attachMp4();
       });
       bindSeekPrefetch();
@@ -207,7 +267,15 @@
       if (waitEl) waitEl.hidden = true;
     });
     player.addEventListener("timeupdate", function () {
-      savePos(player.currentTime, false);
+      var t = player.currentTime || 0;
+      if (isSnapBack(t)) {
+        restoreWanted();
+        return;
+      }
+      if (!player.seeking && !restoring && Date.now() >= holdUntil && t > 2) {
+        wanted = t;
+      }
+      savePos(t, false);
     });
     player.addEventListener("pause", function () {
       savePos(player.currentTime, false);
@@ -219,6 +287,7 @@
   }
   document.getElementById("endAgain").addEventListener("click", function () {
     showEnd(false);
+    markWanted(0);
     try { player.currentTime = 0; } catch (e) {}
     startPlay();
   });
