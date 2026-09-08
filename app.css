@@ -4,11 +4,40 @@
   --ink: #262626;
   --mute: #737373;
   --line: #dbdbdb;
-  --accent: #c13584;
-  --accent-press: #d62976;
+  --accent: #00843d;
+  --accent-press: #006531;
   --void: #fafafa;
-  --rose: #c13584;
-  --rose-soft: #e091b0;
+  --rose: #00843d;
+  --rose-soft: #8fce9a;
+  --tile-void: #e7eee6;
+  --pick-veil: rgba(0, 132, 61, 0.28);
+  --hp-track: rgba(200, 230, 196, 0.55);
+  --hp-hi: #9ccc65;
+  --hp-lo: #005c28;
+  --ring-1: #ffe566;
+  --ring-2: #ffc20e;
+  --ring-3: #8bc34a;
+  --ring-4: #00843d;
+  --ring-5: #005c28;
+  --chip-grad: linear-gradient(120deg, var(--ring-2) 0%, var(--ring-3) 48%, var(--ring-4) 100%);
+  --ring-conic-210: conic-gradient(
+    from 210deg,
+    var(--ring-1) 0deg,
+    var(--ring-2) 70deg,
+    var(--ring-3) 140deg,
+    var(--ring-4) 210deg,
+    var(--ring-5) 280deg,
+    var(--ring-1) 360deg
+  );
+  --ring-conic-0: conic-gradient(
+    from 0deg,
+    var(--ring-1) 0deg,
+    var(--ring-2) 70deg,
+    var(--ring-3) 140deg,
+    var(--ring-4) 210deg,
+    var(--ring-5) 280deg,
+    var(--ring-1) 360deg
+  );
   --sheet-find-min: min(72dvh, calc(var(--vvh, 100vh) - 12px));
   --sheet-find-max: min(86dvh, calc(var(--vvh, 100vh) - 12px));
   --sheet-find-min-wide: min(32dvh, calc(var(--vvh, 100vh) - 48px));
@@ -57,10 +86,10 @@ html, body {
   opacity: 0.42;
   animation: blob-float 22s ease-in-out infinite;
 }
-.blobs span:nth-child(1) { width: 58vw; height: 58vw; left: -18vw; top: -12vh; background: #feda75; }
-.blobs span:nth-child(2) { width: 52vw; height: 52vw; right: -16vw; top: 8vh; background: #d62976; animation-delay: -7s; }
-.blobs span:nth-child(3) { width: 48vw; height: 48vw; left: 12vw; bottom: -18vh; background: #962fbf; animation-delay: -13s; }
-.blobs span:nth-child(4) { width: 40vw; height: 40vw; right: 6vw; bottom: 4vh; background: #4f5bd5; animation-delay: -3s; }
+.blobs span:nth-child(1) { width: 58vw; height: 58vw; left: -18vw; top: -12vh; background: var(--ring-2); }
+.blobs span:nth-child(2) { width: 52vw; height: 52vw; right: -16vw; top: 8vh; background: var(--ring-3); animation-delay: -7s; }
+.blobs span:nth-child(3) { width: 48vw; height: 48vw; left: 12vw; bottom: -18vh; background: var(--ring-4); animation-delay: -13s; }
+.blobs span:nth-child(4) { width: 40vw; height: 40vw; right: 6vw; bottom: 4vh; background: var(--ring-5); animation-delay: -3s; }
 @keyframes blob-float {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(5%, 8%) scale(1.08); }
@@ -155,7 +184,7 @@ html, body {
   width: 88px;
   height: 88px;
   margin: 0 auto 12px;
-  color: #fccc0a;
+  color: var(--ring-2);
 }
 .hall.is-invite .profile {
   width: 100%;
@@ -392,15 +421,7 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
 }
 .cab-cover.is-run .cab-ring {
   box-shadow: none;
-  background: conic-gradient(
-    from 210deg,
-    #feda75 0deg,
-    #fa7e1e 70deg,
-    #d62976 140deg,
-    #962fbf 210deg,
-    #4f5bd5 280deg,
-    #feda75 360deg
-  );
+  background: var(--ring-conic-210);
   animation: ins-spin 2.8s linear infinite;
 }
 @keyframes ins-spin {
@@ -449,12 +470,12 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
     ),
     repeating-linear-gradient(
       calc(-22deg + var(--foil-a, 0deg)),
-      #feda75 0%,
-      #fa7e1e 16%,
-      #d62976 32%,
-      #962fbf 48%,
-      #4f5bd5 64%,
-      #feda75 80%
+      var(--ring-1) 0%,
+      var(--ring-2) 16%,
+      var(--ring-3) 32%,
+      var(--ring-4) 48%,
+      var(--ring-5) 64%,
+      var(--ring-1) 80%
     );
   background-size: 240% 240%, 320% 320%;
   background-position: 10% 40%, 80% 20%;
@@ -523,15 +544,7 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
 .ins-icon.is-run .ins-ring,
 .photo-rail .ins-icon .ins-ring {
   box-shadow: none;
-  background: conic-gradient(
-    from 210deg,
-    #feda75 0deg,
-    #fa7e1e 70deg,
-    #d62976 140deg,
-    #962fbf 210deg,
-    #4f5bd5 280deg,
-    #feda75 360deg
-  );
+  background: var(--ring-conic-210);
 }
 .ins-icon.is-run .ins-ring,
 .settings-entry.is-host .ins-icon .ins-ring {
@@ -539,15 +552,7 @@ button.apple-next path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-lin
 }
 .settings-entry.is-host .ins-icon .ins-ring {
   box-shadow: none;
-  background: conic-gradient(
-    from 210deg,
-    #feda75 0deg,
-    #fa7e1e 70deg,
-    #d62976 140deg,
-    #962fbf 210deg,
-    #4f5bd5 280deg,
-    #feda75 360deg
-  );
+  background: var(--ring-conic-210);
 }
 .ins-icon.is-run,
 .settings-entry.is-run {
@@ -741,7 +746,7 @@ html.has-rail .feed {
 .mode-btn.is-on {
   color: #fff;
   box-shadow: none;
-  background: linear-gradient(120deg, #fa7e1e 0%, #d62976 48%, #962fbf 100%);
+  background: var(--chip-grad);
 }
 .photo-rail {
   position: fixed;
@@ -786,7 +791,7 @@ html.has-rail .feed {
   position: relative;
   display: block;
   aspect-ratio: 2 / 3;
-  background: #efe8ea;
+  background: var(--tile-void);
   overflow: hidden;
   border-radius: 0;
   color: transparent;
@@ -805,7 +810,7 @@ html.has-rail .feed {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  color: #d62976;
+  color: var(--rose);
   filter: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.33));
 }
 .tile-heart svg {
@@ -821,7 +826,7 @@ html.has-rail .feed {
   paint-order: stroke fill;
 }
 .rail-heart.is-on {
-  color: #d62976;
+  color: var(--rose);
 }
 .rail-heart.is-on .ins-face svg,
 .rail-heart.is-on .ins-face path {
@@ -850,15 +855,7 @@ html.has-rail .feed {
   width: 200vw;
   height: 200vw;
   border-radius: 0;
-  background: conic-gradient(
-    from 0deg,
-    #feda75 0deg,
-    #fa7e1e 70deg,
-    #d62976 140deg,
-    #962fbf 210deg,
-    #4f5bd5 280deg,
-    #feda75 360deg
-  );
+  background: var(--ring-conic-0);
   animation: tag-apply-spin 2.4s linear infinite;
   pointer-events: none;
 }
@@ -867,7 +864,7 @@ html.has-rail .feed {
   position: absolute;
   z-index: 1;
   inset: var(--apply-ring);
-  background: #efe8ea;
+  background: var(--tile-void);
   pointer-events: none;
 }
 .tile.is-run img {
@@ -942,7 +939,7 @@ html.has-rail .feed {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(214, 41, 118, 0.28);
+  background: var(--pick-veil);
   z-index: 1;
   pointer-events: none;
 }
@@ -1106,16 +1103,8 @@ button.tag-apply {
   padding: var(--apply-ring);
   border: 0;
   border-radius: 999px;
-  background-color: #d62976;
-  background-image: conic-gradient(
-    from 210deg,
-    #feda75 0deg,
-    #fa7e1e 70deg,
-    #d62976 140deg,
-    #962fbf 210deg,
-    #4f5bd5 280deg,
-    #feda75 360deg
-  );
+  background-color: var(--rose);
+  background-image: var(--ring-conic-210);
   overflow: hidden;
   cursor: pointer;
   color: #fff;
@@ -1132,15 +1121,7 @@ button.tag-apply::before {
   width: 200vw;
   height: 200vw;
   border-radius: 0;
-  background: conic-gradient(
-    from 0deg,
-    #feda75 0deg,
-    #fa7e1e 70deg,
-    #d62976 140deg,
-    #962fbf 210deg,
-    #4f5bd5 280deg,
-    #feda75 360deg
-  );
+  background: var(--ring-conic-0);
   animation: tag-apply-spin 2.4s linear infinite;
   pointer-events: none;
 }
@@ -1158,7 +1139,7 @@ button.tag-apply::before {
   width: 100%;
   border: 2px solid #fff;
   border-radius: 999px;
-  background: #d62976;
+  background: var(--rose);
   color: #fff;
   font-size: 15px;
   font-weight: 700;
@@ -1340,7 +1321,7 @@ label { display: block; margin: 18px 0 8px; color: var(--mute); text-align: left
       rgba(255, 255, 255, 0.4) 48%,
       rgba(255, 255, 255, 0) 100%
     ),
-    linear-gradient(180deg, #e85aa0 0%, var(--rose) 62%, #a3266b 100%);
+    linear-gradient(180deg, var(--hp-hi) 0%, var(--rose) 62%, var(--hp-lo) 100%);
   background-size: 220% 100%, 100% 100%;
   animation: hp-sheen 1.1s linear infinite;
 }
@@ -1362,14 +1343,14 @@ label { display: block; margin: 18px 0 8px; color: var(--mute); text-align: left
   min-width: 0;
   height: 8px;
   border-radius: 999px;
-  background: rgba(243, 214, 228, 0.55);
+  background: var(--hp-track);
   overflow: hidden;
 }
 .hp-fill {
   height: 100%;
   width: 0%;
   border-radius: 999px;
-  background: linear-gradient(180deg, #e85aa0 0%, var(--rose) 62%, #a3266b 100%);
+  background: linear-gradient(180deg, var(--hp-hi) 0%, var(--rose) 62%, var(--hp-lo) 100%);
   transition: width 0.45s ease;
 }
 .tile-job-hud {
@@ -1457,7 +1438,7 @@ html.is-reading body {
   object-fit: cover;
   object-position: center;
   flex: 0 0 auto;
-  background: #efe8ea;
+  background: var(--tile-void);
 }
 #reader-bridge-cover[hidden] {
   display: none !important;
