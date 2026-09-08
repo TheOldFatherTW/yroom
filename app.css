@@ -186,6 +186,9 @@ html, body {
   margin: 0 auto 12px;
   color: var(--ring-2);
 }
+.subway-y path {
+  stroke: var(--rose);
+}
 .hall.is-invite .profile {
   width: 100%;
   min-height: 100vh;
