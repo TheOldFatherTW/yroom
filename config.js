@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://where-alt-generated-hoped.trycloudflare.com";
+window.VAULT_ORIGIN = "https://genome-casio-dancing-old.trycloudflare.com";

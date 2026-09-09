@@ -49,10 +49,10 @@
     return withKey("/cover?book=" + encodeURIComponent(videoId));
   }
   function nativeHls() {
+    if (!player || !player.canPlayType || !player.canPlayType("application/vnd.apple.mpegurl")) return false;
     var ua = navigator.userAgent || "";
-    var ios = /iP(hone|od|ad)/.test(ua);
     var safari = /Safari/i.test(ua) && !/Chrome|Chromium|Edg|Android/i.test(ua);
-    return (ios || safari) && !!(player && player.canPlayType && player.canPlayType("application/vnd.apple.mpegurl"));
+    return appleTouch || /iP(hone|od|ad)/.test(ua) || safari;
   }
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -166,12 +166,17 @@
   function seekWhenReady(pos) {
     if (!player) return;
     if (pos > 2) markWanted(pos);
+    var done = false;
     function go() {
-      if (wanted <= 2) return;
+      if (done || wanted <= 2) return;
+      var dur = player.duration;
+      if (!isFinite(dur) || dur === Infinity) return;
+      done = true;
       restoreWanted();
     }
+    player.addEventListener("loadedmetadata", go);
+    player.addEventListener("durationchange", go);
     if (player.readyState >= 1) go();
-    else player.addEventListener("loadedmetadata", go, { once: true });
   }
   function attachMp4() {
     var keep = wanted > 2 ? wanted : (player && player.currentTime) || 0;
@@ -230,12 +235,17 @@
   function attachMedia() {
     if (!player) return Promise.resolve();
     player.playsInline = true;
-    player.setAttribute("crossorigin", "anonymous");
     if (nativeHls()) {
+      player.removeAttribute("crossorigin");
+      player.addEventListener("error", function () {
+        if (hls) return;
+        attachMp4();
+      }, { once: true });
       player.src = playlistUrl();
       bindSeekPrefetch();
       return Promise.resolve();
     }
+    player.setAttribute("crossorigin", "anonymous");
     return attachHlsJs();
   }
 
