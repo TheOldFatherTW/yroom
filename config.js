@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://genome-casio-dancing-old.trycloudflare.com";
+window.VAULT_ORIGIN = "https://binary-breeding-platforms-lol.trycloudflare.com";
