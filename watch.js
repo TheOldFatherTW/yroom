@@ -26,6 +26,7 @@
   var holdUntil = 0;
   var restoring = false;
   var recoveries = 0;
+  var netRetry = 0;
   var userArmed = 0;
   var appleTouch = /iP(hone|od|ad)/.test(navigator.userAgent || "")
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -73,11 +74,46 @@
     lastPrefetch = index;
     fetch(segmentUrl(index), { cache: "force-cache", mode: "cors" }).catch(function () {});
   }
+  function loadAt() {
+    return wanted > 2 ? wanted : 0;
+  }
   function markWanted(sec) {
     var n = Math.max(0, Number(sec) || 0);
     wanted = n;
     lastSeekT = n;
     userSeekAt = Date.now();
+  }
+  function kickLoad() {
+    var at = loadAt();
+    if (hls) {
+      try { hls.startLoad(at); } catch (e) {}
+    }
+    prefetchAt(at);
+  }
+  function whenPlayable(fn) {
+    if (!player) return;
+    if (player.readyState >= 2) {
+      fn();
+      return;
+    }
+    var done = false;
+    function go() {
+      if (done || !player) return;
+      if (player.readyState >= 2 || (player.readyState >= 1 && isFinite(player.duration))) {
+        done = true;
+        fn();
+      }
+    }
+    player.addEventListener("loadeddata", go, { once: true });
+    player.addEventListener("canplay", go, { once: true });
+    player.addEventListener("loadedmetadata", go, { once: true });
+    kickLoad();
+    window.setTimeout(function () {
+      if (!done) {
+        done = true;
+        fn();
+      }
+    }, 25000);
   }
   function restoreWanted() {
     if (!player || wanted <= 2) return;
@@ -155,17 +191,24 @@
   }
   function startPlay() {
     mediaReady.then(function () {
-      if (player && !player.getAttribute("src") && !hls) player.src = mediaUrl();
-      player.playsInline = true;
-      var p = player.play();
-      if (p && p.then) p.catch(function () {});
-      if (playBtn) playBtn.hidden = true;
-      if (waitEl) waitEl.hidden = true;
+      whenPlayable(function () {
+        if (player && !player.getAttribute("src") && !hls) player.src = mediaUrl();
+        player.playsInline = true;
+        var p = player.play();
+        if (p && p.then) {
+          p.catch(function () {
+            if (hls) attachMp4();
+          });
+        }
+        if (playBtn) playBtn.hidden = true;
+        if (waitEl) waitEl.hidden = true;
+      });
     });
   }
   function seekWhenReady(pos) {
     if (!player) return;
     if (pos > 2) markWanted(pos);
+    else prefetchAt(0);
     var done = false;
     function go() {
       if (done || wanted <= 2) return;
@@ -193,6 +236,7 @@
   }
   function attachHlsJs() {
     recoveries = 0;
+    netRetry = 0;
     return loadHls().then(function () {
       if (!window.Hls || !window.Hls.isSupported()) {
         attachMp4();
@@ -210,14 +254,21 @@
       hls.loadSource(playlistUrl());
       hls.attachMedia(player);
       hls.on(window.Hls.Events.MEDIA_ATTACHED, function () {
-        if (wanted > 2) {
-          try { hls.startLoad(wanted); } catch (e) {}
-        }
+        kickLoad();
+      });
+      hls.on(window.Hls.Events.MANIFEST_PARSED, function () {
+        netRetry = 0;
+        kickLoad();
       });
       hls.on(window.Hls.Events.ERROR, function (_evt, data) {
         if (!data || !data.fatal) return;
         if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
-          try { hls.startLoad(); } catch (e) {}
+          netRetry += 1;
+          if (netRetry > 2) {
+            attachMp4();
+            return;
+          }
+          try { hls.startLoad(loadAt()); } catch (e) { attachMp4(); }
           return;
         }
         if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR && recoveries < 2) {
