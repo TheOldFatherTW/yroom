@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://integer-kansas-sacramento-soa.trycloudflare.com";
+window.VAULT_ORIGIN = "https://pages-stocks-pound-growth.trycloudflare.com";
