@@ -61,6 +61,7 @@ body.famiWeb #navStage {
   overflow: hidden;
   display: grid;
   place-content: center;
+  transform-origin: 0 0;
 }
 body.famiWeb #navStage > .nav-spread,
 body.famiWeb #navImage,
