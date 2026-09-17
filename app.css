@@ -800,6 +800,20 @@ html.has-rail .feed {
 .tile.tile-film {
   aspect-ratio: 800 / 538;
 }
+.tile .tile-plus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+.tile .tile-plus svg {
+  width: 36px;
+  height: 36px;
+  color: #8e8e8e;
+}
 .tile-heart {
   position: absolute;
   top: 6px;

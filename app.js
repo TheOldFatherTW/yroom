@@ -182,14 +182,18 @@
     return pct + "%";
   }
 
+  function coverTarget(item) {
+    return item.cover_book || item.id || "";
+  }
+
   function coverUrl(item) {
     var extra = item.cover_rev ? "&r=" + encodeURIComponent(item.cover_rev) : "";
-    return withKey("/cover?book=" + encodeURIComponent(item.id || "") + extra);
+    return withKey("/cover?book=" + encodeURIComponent(coverTarget(item)) + extra);
   }
 
   function thumbUrl(item) {
     var extra = item.cover_rev ? "&r=" + encodeURIComponent(item.cover_rev) : "";
-    return withKey("/thumb?book=" + encodeURIComponent(item.id || "") + extra);
+    return withKey("/thumb?book=" + encodeURIComponent(coverTarget(item)) + extra);
   }
 
   function thumbKey(item) {
@@ -1087,11 +1091,20 @@
       if (item.kind === "org") tile.dataset.kind = "org";
       if (item.has_cover) {
         var img = document.createElement("img");
-        img.alt = "";
+        img.alt = item.title || "";
         img.decoding = "async";
         if (index < FIRST) img.loading = "eager";
+        img.addEventListener("error", function () {
+          img.removeAttribute("src");
+          img.hidden = true;
+        });
         tile.appendChild(img);
         watchThumb(img, item, index < FIRST);
+      } else if (item.kind === "org") {
+        var mark = document.createElement("span");
+        mark.className = "tile-plus";
+        mark.innerHTML = FOLDER;
+        tile.appendChild(mark);
       }
       var shield = document.createElement("span");
       shield.className = "tile-shield";
