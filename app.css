@@ -1236,6 +1236,88 @@ label { display: block; margin: 18px 0 8px; color: var(--mute); text-align: left
 .batch-tag-sheet .tag-apply {
   margin-top: 8px;
 }
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+button.tag-chip {
+  margin: 0;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.batch-tag-sheet button.tag-chip.is-on {
+  background: var(--chip-grad);
+  border-color: transparent;
+  color: #fff;
+}
+.ask-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.4);
+}
+.ask-mask[hidden] {
+  display: none !important;
+}
+.ask-card {
+  width: min(300px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 20px 16px;
+  color: #1c1c1e;
+}
+.ask-card p {
+  margin: 0 0 18px;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+.ask-actions {
+  display: flex;
+  gap: 8px;
+}
+.ask-actions button:not(.tag-apply) {
+  flex: 1;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ask-no {
+  background: #f2f2f7;
+  color: #1c1c1e;
+}
+.ask-yes {
+  background: var(--chip-grad);
+  color: #fff;
+}
+.ask-mask.is-note {
+  pointer-events: none;
+}
+.ask-mask.is-note.is-out {
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+.ask-mask.is-note .ask-actions {
+  display: none;
+}
 .kb-up .blobs {
   display: none;
 }

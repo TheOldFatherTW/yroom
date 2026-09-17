@@ -6,6 +6,8 @@
   var LIST = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12M6 12h12M6 17h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
   var GRID = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="5" y="13.5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="13.5" width="5.5" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   var PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l12 6-12 6z" fill="currentColor"/></svg>';
+  var FOLDER =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v10H4z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
   var CAMERA =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8" width="17" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l1.4-2.4h5.2L16 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.6" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   var KEY = (window.YRoomGate && window.YRoomGate.currentKey()) || window.YROOM_VIEW_KEY || "";
@@ -17,6 +19,8 @@
   var menu = document.getElementById("settingsMenu");
   var catcher = document.getElementById("settingsCatch");
   var actMask = document.getElementById("actMask");
+  var askMask = document.getElementById("askMask");
+  var shelfBack = document.getElementById("shelf-back");
   var jobsMask = document.getElementById("jobsMask");
   var jobsBody = document.getElementById("jobsBody");
   var homeInstall = document.getElementById("home-install");
@@ -41,6 +45,13 @@
   try { listMode = localStorage.getItem(LAYOUT_KEY) === "list"; } catch (e) {}
   var selected = new Set();
   var selectMode = false;
+  var cwd = "";
+  var parentCwd = "";
+  var orgSnap = { folders: [], favorites: [] };
+  var actItem = null;
+  var form = null;
+  var askFn = null;
+  var noteTimer = 0;
   var FIRST = 12;
   var THUMB_CAP = 6;
   var THUMB_CACHE = "yroom-thumbs-v1";
@@ -476,6 +487,291 @@
     });
   }
 
+  function shelfTab() {
+    return mode === "fav" ? "fav" : (mode === "video" ? "video" : "manga");
+  }
+
+  function shelfPath() {
+    var q = "/api/shelf?limit=400&tab=" + encodeURIComponent(shelfTab());
+    if (cwd) q += "&cwd=" + encodeURIComponent(cwd);
+    return q;
+  }
+
+  function reloadShelf() {
+    return get(shelfPath()).then(function (data) {
+      if (!data) return data;
+      allItems = data.items || [];
+      cwd = data.cwd || cwd || "";
+      parentCwd = data.parent || "";
+      catalog = {};
+      allItems.forEach(function (item) { catalog[item.id] = item; });
+      paintBack();
+      paintFeed();
+      return data;
+    });
+  }
+
+  function paintBack() {
+    if (shelfBack) shelfBack.hidden = !cwd;
+  }
+
+  function refreshOrg() {
+    return get("/api/host/org").then(function (snap) {
+      if (snap) orgSnap = snap;
+    }).catch(function () {});
+  }
+
+  function folderTitleText(title) {
+    var max = window.matchMedia("(max-width: 560px)").matches ? 5 : 15;
+    var s = String(title || "");
+    if (s.length <= max) return s;
+    return s.slice(0, max) + "...";
+  }
+
+  function tileEpText(item) {
+    if (!item) return "";
+    if (item.kind === "org") {
+      var label = folderTitleText(item.title || "");
+      if (label) return label;
+      var count = Number(item.page_count) || 0;
+      return count > 1 ? count + "本" : "資料夾";
+    }
+    if (item.kind === "video") return item.duration ? clock(item.duration) : "";
+    return item.page_count ? item.page_count + "頁" : "";
+  }
+
+  function pickedItems() {
+    var out = [];
+    selected.forEach(function (id) {
+      if (catalog[id]) out.push(catalog[id]);
+    });
+    return out;
+  }
+
+  function folderOk() {
+    var items = pickedItems();
+    var folders = items.filter(function (it) { return it && it.kind === "org"; });
+    var books = items.filter(function (it) { return it && it.kind !== "org"; });
+    if (folders.length >= 2 && !books.length) return false;
+    return books.length > 0 || folders.length === 1;
+  }
+
+  function flashNote(text) {
+    var p = document.getElementById("askText");
+    var actions = askMask && askMask.querySelector(".ask-actions");
+    if (!askMask || !p) return;
+    askFn = null;
+    p.textContent = text;
+    if (actions) actions.hidden = true;
+    askMask.classList.add("is-note");
+    askMask.classList.remove("is-out");
+    askMask.hidden = false;
+    if (noteTimer) window.clearTimeout(noteTimer);
+    noteTimer = window.setTimeout(function () {
+      askMask.classList.add("is-out");
+      noteTimer = window.setTimeout(function () {
+        if (!askMask.classList.contains("is-note")) return;
+        askMask.hidden = true;
+        askMask.classList.remove("is-note", "is-out");
+        if (actions) actions.hidden = false;
+        noteTimer = 0;
+      }, 280);
+    }, 1600);
+  }
+
+  function openActTitle(text) {
+    var title = document.getElementById("actTitle");
+    if (title) title.textContent = text;
+  }
+
+  function openActBody() {
+    var body = document.getElementById("actBody");
+    if (!actMask || !body) return null;
+    body.innerHTML = "";
+    actMask.hidden = false;
+    return body;
+  }
+
+  function restoreActShell() {
+    var body = document.getElementById("actBody");
+    if (!body) return;
+    body.innerHTML =
+      "<p>重掃全部收藏。已齊的本會跳過，只補缺頁與壞頁。</p>" +
+      '<button type="button" class="tag-apply" id="actGo"><span class="tag-apply-face">確認</span></button>';
+    var go = document.getElementById("actGo");
+    if (go) {
+      go.addEventListener("click", function () {
+        if (busy) return;
+        busy = true;
+        setJobRun(true);
+        closeAct();
+        post("/api/host/item", { op: "private_favorites" }).then(function () {
+          busy = false;
+          jobsMask.hidden = false;
+          refreshJobs();
+        }).catch(function () {
+          busy = false;
+          setJobRun(false);
+        });
+      });
+    }
+  }
+
+  function closeAct() {
+    if (actMask) actMask.hidden = true;
+    actItem = null;
+    form = null;
+    restoreActShell();
+  }
+
+  function addConfirm(body, fn, label) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tag-apply";
+    btn.innerHTML = '<span class="tag-apply-face">' + (label || "確認") + "</span>";
+    btn.addEventListener("click", fn);
+    body.appendChild(btn);
+  }
+
+  function formSteps(kind, item) {
+    if (kind === "new_org") return [{ key: "title", label: "資料夾名稱" }];
+    if (kind === "rename_org") return [{ key: "title", label: "名稱", value: item && item.title }];
+    return [];
+  }
+
+  function paintForm() {
+    var title = document.getElementById("actTitle");
+    var body = document.getElementById("actBody");
+    if (!form || !body) return;
+    var step = form.steps[form.idx];
+    if (title) title.textContent = step.label;
+    body.innerHTML = "";
+    var err = document.createElement("p");
+    err.className = "err";
+    err.id = "hostFormErr";
+    body.appendChild(err);
+    var row = document.createElement("div");
+    row.className = "apple-row";
+    var input = document.createElement("input");
+    input.autocomplete = "off";
+    input.value = form.data[step.key] || step.value || "";
+    row.appendChild(input);
+    body.appendChild(row);
+    addConfirm(body, function () { advance(input.value); });
+    input.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        advance(input.value);
+      }
+    });
+    window.setTimeout(function () { input.focus(); }, 50);
+  }
+
+  function formErr(text) {
+    var err = document.getElementById("hostFormErr");
+    if (err) err.textContent = text;
+  }
+
+  function advance(value) {
+    if (!form) return;
+    var step = form.steps[form.idx];
+    form.data[step.key] = value;
+    submitForm();
+  }
+
+  function startForm(kind, item) {
+    actItem = item || null;
+    form = { kind: kind, item: item || null, steps: formSteps(kind, item), idx: 0, data: {} };
+    paintForm();
+    if (actMask) actMask.hidden = false;
+  }
+
+  function submitForm() {
+    if (!form) return;
+    var kind = form.kind;
+    var data = form.data;
+    var item = form.item;
+    var req;
+    if (kind === "new_org") {
+      req = post("/api/host/org", {
+        op: "folder_create",
+        title: data.title || "",
+        books: (item && item.books) || [],
+        tab: shelfTab() === "fav" ? "manga" : shelfTab(),
+      });
+    } else if (kind === "rename_org" && item) {
+      req = post("/api/host/org", { op: "folder_rename", folder: item.id, title: data.title || "" });
+    } else {
+      return;
+    }
+    req.then(function () {
+      closeAct();
+      clearSelect();
+      return reloadShelf();
+    }).then(refreshOrg).catch(function (err) {
+      formErr((err && err.error) || "請再試一次");
+    });
+  }
+
+  function openFolderSheet() {
+    var books = pickedItems().filter(function (it) { return it.kind !== "org"; });
+    var folders = pickedItems().filter(function (it) { return it.kind === "org"; });
+    if (!books.length && !folders.length) return;
+    if (folders.length >= 2 && !books.length) {
+      flashNote("資料夾間無法合併");
+      return;
+    }
+    if (!books.length && folders.length) {
+      startForm("rename_org", folders[0]);
+      return;
+    }
+    openActTitle("資料夾");
+    var body = openActBody();
+    if (!body) return;
+    var picked = new Set(folders.map(function (it) { return it.id; }));
+    var row = document.createElement("div");
+    row.className = "tag-row";
+    (orgSnap.folders || []).forEach(function (it) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "tag-chip" + (picked.has(it.id) ? " is-on" : "");
+      chip.textContent = it.title || "資料夾";
+      chip.addEventListener("click", function () {
+        if (picked.has(it.id)) picked.delete(it.id);
+        else picked.add(it.id);
+        chip.classList.toggle("is-on", picked.has(it.id));
+      });
+      row.appendChild(chip);
+    });
+    var make = document.createElement("button");
+    make.type = "button";
+    make.className = "tag-chip";
+    make.textContent = "新建…";
+    make.addEventListener("click", function () {
+      startForm("new_org", { books: books.map(function (it) { return it.id; }) });
+    });
+    row.appendChild(make);
+    body.appendChild(row);
+    addConfirm(body, function () {
+      var ids = Array.from(picked);
+      if (!ids.length) {
+        closeAct();
+        return;
+      }
+      post("/api/host/org", {
+        op: "assign",
+        books: books.map(function (it) { return it.id; }),
+        folders: ids,
+      }).then(function () {
+        closeAct();
+        clearSelect();
+        return reloadShelf();
+      }).then(refreshOrg).catch(function (err) {
+        flashNote((err && err.error) || "放不進資料夾");
+      });
+    });
+  }
+
   function clearSelect() {
     selected = new Set();
     selectMode = false;
@@ -519,8 +815,11 @@
     var rail = document.getElementById("photo-rail");
     if (rail) rail.hidden = !on;
     document.documentElement.classList.toggle("has-rail", !!on);
-    if (on) paintRailHeart();
-    else if (rail) {
+    if (on) {
+      paintRailHeart();
+      var folder = rail && rail.querySelector(".rail-folder");
+      if (folder) folder.classList.toggle("is-off", !folderOk());
+    } else if (rail) {
       var heart = rail.querySelector(".rail-heart");
       if (heart) heart.classList.remove("is-on");
     }
@@ -530,23 +829,17 @@
     var rail = document.getElementById("photo-rail");
     if (!rail || rail.dataset.ready) return rail;
     rail.dataset.ready = "1";
-    var heart = document.createElement("button");
-    heart.type = "button";
-    heart.className = "ins-icon rail-heart";
-    heart.setAttribute("aria-label", "愛心");
-    heart.title = "愛心";
-    heart.innerHTML = '<span class="ins-ring"></span><span class="ins-face">' + HEART_RAIL + "</span>";
-    heart.addEventListener("click", function (ev) {
+    var folder = insButton("rail-folder", FOLDER, "資料夾");
+    folder.addEventListener("click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
-      toggleHeart();
+      if (!folderOk()) {
+        flashNote("資料夾間無法合併");
+        return;
+      }
+      openFolderSheet();
     });
-    var cover = document.createElement("button");
-    cover.type = "button";
-    cover.className = "ins-icon rail-cover";
-    cover.setAttribute("aria-label", "換封面");
-    cover.title = "換封面";
-    cover.innerHTML = '<span class="ins-ring"></span><span class="ins-face">' + CAMERA + "</span>";
+    var cover = insButton("rail-cover", CAMERA, "換封面");
     cover.addEventListener("click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -554,28 +847,41 @@
       bookCoverInput.value = "";
       bookCoverInput.click();
     });
+    var heart = insButton("rail-heart", HEART_RAIL, "愛心");
+    heart.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      toggleHeart();
+    });
+    rail.appendChild(folder);
     rail.appendChild(cover);
     rail.appendChild(heart);
     return rail;
   }
 
   function toggleHeart() {
-    var ids = Array.from(selected);
-    if (!ids.length) return;
-    var anyOff = ids.some(function (id) { return catalog[id] && !catalog[id].favorite; });
-    var patch = {};
-    ids.forEach(function (id) { patch[id] = anyOff; });
-    post("/api/prefs", { favorites: patch }).then(function () {
-      return get("/api/shelf?limit=400");
-    }).then(function (data) {
-      if (data) {
-        allItems = data.items || [];
-        catalog = {};
-        allItems.forEach(function (item) { catalog[item.id] = item; });
-      }
+    var items = pickedItems();
+    if (!items.length) return;
+    var orgIds = items.filter(function (it) { return it.kind === "org"; }).map(function (it) { return it.id; });
+    var media = items.filter(function (it) { return it.kind !== "org"; });
+    var anyOff = items.some(function (it) { return !it.favorite; });
+    var chain = Promise.resolve();
+    if (orgIds.length) {
+      chain = chain.then(function () {
+        return post("/api/host/org", { op: "favorite", ids: orgIds, on: anyOff });
+      });
+    }
+    if (media.length) {
+      var patch = {};
+      media.forEach(function (it) { patch[it.id] = anyOff; });
+      chain = chain.then(function () {
+        return post("/api/prefs", { favorites: patch });
+      });
+    }
+    chain.then(function () {
       clearSelect();
-      paintFeed();
-    });
+      return reloadShelf();
+    }).then(refreshOrg);
   }
 
   function bindTile(btn, item) {
@@ -751,11 +1057,14 @@
     feed.innerHTML = "";
     feed.classList.toggle("is-film", mode === "video");
     applyLayoutClass();
-    var items = allItems.filter(function (item) {
-      if (mode === "fav") return item.favorite;
-      if (mode === "video") return item.kind === "video" || item.tab === "video";
-      return item.kind !== "video" && item.tab !== "video";
-    });
+    var items = allItems;
+    if (!cwd) {
+      items = allItems.filter(function (item) {
+        if (mode === "fav") return item.favorite;
+        if (mode === "video") return item.kind === "video" || item.tab === "video";
+        return item.kind === "org" || (item.kind !== "video" && item.tab !== "video");
+      });
+    }
     items = items.filter(function (item) { return item.favorite; }).concat(
       items.filter(function (item) { return !item.favorite; })
     );
@@ -769,6 +1078,7 @@
       tile.type = "button";
       tile.className = item.kind === "video" || item.tab === "video" ? "tile tile-film" : "tile";
       tile.setAttribute("data-id", item.id || "");
+      if (item.kind === "org") tile.dataset.kind = "org";
       if (item.has_cover) {
         var img = document.createElement("img");
         img.alt = "";
@@ -788,8 +1098,7 @@
       }
       var meta = document.createElement("span");
       meta.className = "tile-ep";
-      if (item.kind === "video") meta.textContent = item.duration ? clock(item.duration) : "";
-      else meta.textContent = item.page_count ? item.page_count + "頁" : "";
+      meta.textContent = tileEpText(item);
       if (!meta.textContent) meta.hidden = true;
       tile.appendChild(meta);
       var pct = document.createElement("span");
@@ -801,6 +1110,12 @@
       bindTile(tile, item);
       tile.addEventListener("click", function () {
         if (busy || selectMode) return;
+        if (item.kind === "org") {
+          cwd = item.id;
+          clearSelect();
+          reloadShelf();
+          return;
+        }
         if (!item.readable) return;
         if (item.kind === "video") openWatch(item);
         else openReader(item);
@@ -1089,8 +1404,10 @@
     document.querySelectorAll("#mode-bar .mode-btn").forEach(function (el) {
       el.classList.toggle("is-on", el.dataset.mode === mode);
     });
+    cwd = "";
+    parentCwd = "";
     clearSelect();
-    paintFeed();
+    reloadShelf();
   }
 
   function ensureLayoutToggle() {
@@ -1171,32 +1488,41 @@
     var job = btn.getAttribute("data-job");
     if (job === "cover" && coverInput) coverInput.click();
     if (job === "backdrop" && backdropInput) backdropInput.click();
-    if (job === "private") actMask.hidden = false;
+    if (job === "private") {
+      restoreActShell();
+      actMask.hidden = false;
+    }
     if (job === "jobs") {
       jobsMask.hidden = false;
       refreshJobs();
     }
   });
 
-  function closeAct() { actMask.hidden = true; }
   document.getElementById("actClose").addEventListener("click", closeAct);
   actMask.addEventListener("pointerup", function (ev) {
     if (ev.target === actMask) closeAct();
   });
-  document.getElementById("actGo").addEventListener("click", function () {
-    if (busy) return;
-    busy = true;
-    setJobRun(true);
-    closeAct();
-    post("/api/host/item", { op: "private_favorites" }).then(function () {
-      busy = false;
-      jobsMask.hidden = false;
-      refreshJobs();
-    }).catch(function () {
-      busy = false;
-      setJobRun(false);
+  restoreActShell();
+  if (askMask) {
+    var askNo = document.getElementById("askNo");
+    var askYes = document.getElementById("askYes");
+    if (askNo) askNo.addEventListener("click", function () { askMask.hidden = true; askFn = null; });
+    if (askYes) askYes.addEventListener("click", function () {
+      var fn = askFn;
+      askMask.hidden = true;
+      askFn = null;
+      if (fn) fn();
     });
-  });
+    if (window.YRoomGate && window.YRoomGate.lockSheetPage) window.YRoomGate.lockSheetPage(askMask);
+  }
+  if (shelfBack) {
+    shelfBack.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      cwd = parentCwd || "";
+      clearSelect();
+      reloadShelf();
+    });
+  }
 
   if (window.YRoomGate && window.YRoomGate.lockSheetPage) {
     if (actMask) window.YRoomGate.lockSheetPage(actMask);
@@ -1294,15 +1620,19 @@
           homeInstall.hidden = false;
         }
       }
+      refreshOrg();
       if (gate) {
-        return gate.apiRetry("/api/shelf?limit=400", KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; });
+        return gate.apiRetry(shelfPath(), KEY, { timeout: 20000, tries: 3 }).then(function (x) { return x && x.j; });
       }
-      return get("/api/shelf?limit=400");
+      return get(shelfPath());
     }).then(function (data) {
       if (!data) return;
       allItems = data.items || [];
+      cwd = data.cwd || "";
+      parentCwd = data.parent || "";
       catalog = {};
       allItems.forEach(function (item) { catalog[item.id] = item; });
+      paintBack();
       paintFeed();
       requestAnimationFrame(layoutStage);
       refreshJobs();
@@ -1379,7 +1709,9 @@
       var file = bookCoverInput.files && bookCoverInput.files[0];
       bookCoverInput.value = "";
       if (!file || coverBusy) return;
-      var ids = Array.from(selected);
+      var ids = Array.from(selected).filter(function (id) {
+        return catalog[id] && catalog[id].kind !== "org";
+      });
       if (!ids.length) return;
       coverBusy = true;
       showWaitCard("更換封面中");
@@ -1400,15 +1732,8 @@
       });
       chain.then(function () {
         setWaitPct(100);
-        return get("/api/shelf?limit=400");
-      }).then(function (data) {
-        if (data) {
-          allItems = data.items || [];
-          catalog = {};
-          allItems.forEach(function (item) { catalog[item.id] = item; });
-        }
         clearSelect();
-        paintFeed();
+        return reloadShelf();
       }).finally(function () {
         hideWaitCard();
         coverBusy = false;

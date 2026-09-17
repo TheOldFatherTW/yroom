@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./app.css?v=21"/>
+<link rel="stylesheet" href="./app.css?v=22"/>
 <script src="./config.js?v=1789574215"></script>
 <script>
 (function () {
@@ -184,6 +184,12 @@
         <button type="button" class="mode-btn is-on" data-mode="manga" id="modeBooks">漫畫</button>
         <button type="button" class="mode-btn" data-mode="video" id="modeVideo">影片</button>
       </div>
+      <button type="button" class="ins-icon nav-back" id="shelf-back" hidden aria-label="返回書櫃">
+        <span class="ins-ring"></span>
+        <span class="ins-face">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5M8.5 12H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
     </div>
   </div>
   <div class="feed" id="feed"></div>
@@ -200,6 +206,15 @@
     </div>
     <p class="wait-pct" id="waitPct">0%</p>
     <div class="thinking-five" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+</div>
+<div class="ask-mask" id="askMask" hidden>
+  <div class="ask-card" role="dialog" aria-modal="true">
+    <p id="askText"></p>
+    <div class="ask-actions">
+      <button type="button" class="ask-no" id="askNo">取消</button>
+      <button type="button" class="ask-yes" id="askYes">確認</button>
+    </div>
   </div>
 </div>
 <div class="batch-tag-mask" id="actMask" hidden>
@@ -247,6 +262,6 @@
 </div>
 <script src="./gate.js?v=10"></script>
 <script src="./hey.js?v=8"></script>
-<script src="./app.js?v=24"></script>
+<script src="./app.js?v=25"></script>
 </body>
 </html>
