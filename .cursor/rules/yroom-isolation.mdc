@@ -1,0 +1,36 @@
+---
+description: YRoom hard isolation — private vault/auth/storage must never leak to or from other Fami doors. UI vocabulary alignment only.
+alwaysApply: true
+---
+
+# YRoom 硬隔離（always-on）
+
+YRoom 是 **私人觀看** 產品。其他 Fami 門因 bug **絕不可** 誤連、誤讀 YRoom 的 auth、origin、storage 或 vault 內容。詳見 repo 根目錄 `AGENTS.md`。
+
+## 必守
+
+1. **Gate**：維持 `window.YRoomGate`（`gate.js`）。禁止引入共用 `FamiGate` 模組、禁止把 YRoom gate 抽成跨 app 共用核心、禁止從 famibook／famiphoto 等 repo 整份複製 gate 邏輯進來。
+2. **Vault origin**：僅 `config.js` 的 `VAULT_ORIGIN`（YRoom 專用隧道）。禁止沿用或 fallback 到其他 Fami app 的 vault URL／config。
+3. **Storage / cookie**：鍵名必須保持 `yroom.*` 或 `yroom-` 前綴（如 `yroom.viewKey`、`yroom.gateOk`、`yroom-thumbs-v1`）。禁止改為 `fami.*` 或與兄弟 app 共用前綴；禁止新增跨 app 共用 storage 封裝 unless 它 **只** 讀寫 YRoom 命名空間且無法被他門呼叫。
+4. **Auth**：YRoom 鑰匙與 gate API（`/api/gate`、`/api/door` 等）僅服務 YRoom vault。禁止讀寫其他門的 token、session 或 cookie。
+5. **資料邊界**：不得假設 YRoom catalog／媒體與書櫃、相簿等 vault 互通；不得合併跨產品索引或快取。
+
+## 允許（僅無狀態 UI）
+
+- 對齊 **`fami-shared-ui`** 詞彙：返回、確認、找卡、操作卡、齒輪、首頁頭、等待三語、標準個人頁殼。
+- 對齊 **外觀與文案叫法**，不共享 gate、auth、storage、vault 實作。
+- YRoom 可無「家人」等產品功能，但 **不可** 未經使用者同意做閹割版門面（少封面、少長押、少齒輪圖示等）。
+
+## 改動前自問
+
+- 這個 diff 會不會讓 **非 YRoom** 程式碼路徑讀到 `yroom.viewKey` 或 YRoom vault？
+- 會不會把 YRoom 改成讀 **其他門** 的 storage 或 `VAULT_ORIGIN`？
+- 是否在引入「共用」模組？若是，**拒絕** — YRoom 不參與 FamiGate／共用 storage 內核。
+
+任一項為「會」→ 停止，改為 YRoom 本地實作或僅做 UI 詞彙對齊。
+
+## 交付
+
+- 使用者入口：**GitHub Pages**（同一 URL 支援桌機／iPad／iPhone）。
+- 會上 Pages 的 html／js／css／圖示／`config.js`：驗證後 push `main` 並提高 `?v=`。
+- 本 repo **禁止 PR 流程以外的例外**；Cloud Agent 依任務開 branch + PR 時，隔離規則仍適用。
