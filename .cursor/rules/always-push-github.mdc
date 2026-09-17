@@ -1,0 +1,25 @@
+---
+description: 任何會上線的改動都必須立刻 push 到 GitHub Pages main；禁止只留本機 commit。
+alwaysApply: true
+---
+
+# 改完一定要推 GitHub（硬規則）
+
+使用者**不在本機開門面驗收**。iPhone／iPad／桌機一律開 **GitHub Pages**：
+
+https://theoldfathertw.github.io/yroom/
+
+因此：**只 commit、不 push = 沒改。** 代理不得把「已完成」交付建立在僅本機存檔或 Cursor 預覽。
+
+## 必做
+
+- 遠端 `origin` = `https://github.com/TheOldFatherTW/yroom.git`。
+- 會出現在 Pages 的檔（html／js／css／圖示、`config.js` 隧道 origin、`?v=`）：驗證後 **`git commit` + `git push origin main`**。不要開 PR、不要只留本機。
+- 任務**結束前**就要 push，**不必等使用者再說「推上去」**。本規則覆蓋「沒要求就不要 commit」的通用習慣。
+- 改 `app.css`／`*.js` 時一併提高 `index.html`／`hey.html` 的 `?v=`。
+- push 成功後簡短告知：Pages 約 1–2 分鐘更新，Safari 請硬重新整理。
+
+## 不要
+
+- 不要以為存檔、本機預覽、或「已 commit 待推」等於上線。
+- 不要推金鑰、媒體本體、保險庫內部資料。

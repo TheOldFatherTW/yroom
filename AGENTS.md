@@ -56,11 +56,11 @@ index.html / hey.html  →  gate.js (YRoomGate)  →  VAULT_ORIGIN (config.js)
 
 ## 代理開工前
 
-1. 讀本檔與 `.cursor/rules/yroom-isolation.mdc`。
+1. 讀本檔、**`.cursor/rules/always-push-github.mdc`**（硬規則、always-on）與 `.cursor/rules/yroom-isolation.mdc`。
 2. 若動到畫面元件，讀 **`fami-shared-ui`**（只取詞彙與視覺慣例，不複製 gate／storage）。
 3. 若動 Pages／隧道／三端表面，讀 **`ios-home-web`**。
 4. 確認改動不會讓他門讀寫 `yroom.*` 或連到 YRoom vault。
-5. 會上 GitHub Pages 的門面檔：驗證後 commit + push `main`，提高 `?v=`。
+5. 會上 GitHub Pages 的門面檔：驗證後 **commit + push `main`**，提高 `?v=`。**禁止只留本機**；不要問「要不要推」。Pages：https://theoldfathertw.github.io/yroom/
 
 ## Wave1 範圍提醒
 

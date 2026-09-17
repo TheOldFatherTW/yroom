@@ -32,5 +32,5 @@ YRoom 是 **私人觀看** 產品。其他 Fami 門因 bug **絕不可** 誤連�
 ## 交付
 
 - 使用者入口：**GitHub Pages**（同一 URL 支援桌機／iPad／iPhone）。
+- **修完就推**：見同目錄 **`always-push-github.mdc`**（always-on）。只 commit 不 push = 沒改；任務結束前必須 `git push origin main`，不要問「要不要推」。
 - 會上 Pages 的 html／js／css／圖示／`config.js`：驗證後 push `main` 並提高 `?v=`。
-- 本 repo **禁止 PR 流程以外的例外**；Cloud Agent 依任務開 branch + PR 時，隔離規則仍適用。
