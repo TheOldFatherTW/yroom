@@ -1,1 +1,1 @@
-window.VAULT_ORIGIN = "https://warranties-reasons-bar-family.trycloudflare.com";
+window.VAULT_ORIGIN = "https://ask-ala-theoretical-rob.trycloudflare.com";
